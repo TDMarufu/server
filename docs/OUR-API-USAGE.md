@@ -15,6 +15,11 @@ Note the `/api` prefix — our deployment serves the API under `/api`
 instead (`api.sms-gate.app`), so copy-pasting their examples without adding
 `/api` will 404 against our server.
 
+> **Handing API access to someone outside our team?** Don't share device
+> credentials below — issue them a scoped Bearer token instead. See
+> [EXTERNAL-INTEGRATORS.md](EXTERNAL-INTEGRATORS.md) for how to issue one and
+> what to give them.
+
 ## Authentication
 
 Every call uses HTTP Basic Auth with a **per-device** username and password.
@@ -66,6 +71,35 @@ The `state` field progresses: `Pending` → `Processed` → `Sent` → `Delivere
 second; if it hangs on `Pending` for more than a few seconds, either the phone
 is offline/unreachable, or you're querying a stale device (see note above about
 re-registration).
+
+## Issuing a Scoped Token for Someone Else
+
+Instead of giving a third party the raw device username/password above (full
+access tied to one phone), issue them a Bearer token limited to only what they
+need:
+
+```bash
+curl -s -u "<device-username>:<device-password>" \
+  -X POST https://sms.territechnologies.com/api/3rdparty/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"ttl":7776000,"scopes":["messages:send","messages:read","messages:list"]}'
+```
+
+- `ttl` is in seconds (`7776000` = 90 days); it's capped by the server's
+  `jwt.access_ttl` config.
+- `scopes` — pick only what they need. Available: `messages:send`,
+  `messages:read`, `messages:list`, `messages:cancel`, `messages:export`,
+  `devices:list`, `devices:delete`, `inbox:list`, `inbox:read`,
+  `inbox:refresh`, `logs:read`, `settings:read`, `settings:write`,
+  `webhooks:list`, `webhooks:write`, `webhooks:delete`.
+- The response includes `access_token` and `refresh_token` — give the external
+  party both plus [EXTERNAL-INTEGRATORS.md](EXTERNAL-INTEGRATORS.md).
+- To revoke it later: `DELETE /api/3rdparty/v1/auth/token/<jti>` (the `jti` is
+  the `id` field from the original token response), authenticated with the
+  device credentials that issued it.
+
+This requires `jwt.secret` to be set in `config.yml` (empty disables the
+whole token system — `501 token service disabled` if you forget it).
 
 ## Other Endpoints (same base URL + auth)
 
