@@ -8,7 +8,7 @@ const (
 	GatewayModePublic  GatewayMode = "public"
 	GatewayModePrivate GatewayMode = "private"
 
-	DefaultUpstreamURL = "https://api.sms-gate.app/upstream/v1"
+	DefaultUpstreamURL = ""
 )
 
 type Config struct {
@@ -162,7 +162,7 @@ func Default() Config {
 		JWT: JWT{
 			AccessTTL:  Duration(time.Minute * 15),
 			RefreshTTL: Duration(time.Hour * 24 * 30),
-			Issuer:     "sms-gate.app",
+			Issuer:     "sms.territechnologies.com",
 		},
 		OTP: OTP{
 			Enabled: true,

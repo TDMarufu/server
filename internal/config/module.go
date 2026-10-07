@@ -69,7 +69,7 @@ func Module() fx.Option {
 		}),
 		fx.Provide(func(cfg Config) push.Config {
 			mode := push.ModeFCM
-			if cfg.Gateway.Mode == GatewayModePrivate {
+			if cfg.Gateway.Mode == GatewayModePrivate && !hasFCMCredentials(cfg.FCM.CredentialsJSON) {
 				mode = push.ModeUpstream
 			}
 
@@ -170,4 +170,11 @@ func Module() fx.Option {
 			}
 		}),
 	)
+}
+
+// hasFCMCredentials reports whether real Firebase service-account
+// credentials were configured (the example config uses "{}").
+func hasFCMCredentials(s string) bool {
+	s = strings.TrimSpace(s)
+	return s != "" && s != "{}"
 }

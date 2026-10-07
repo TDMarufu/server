@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultBaseURL = "https://api.sms-gate.app/upstream/v1"
+	defaultBaseURL = ""
 	optionBaseURL  = "upstream_base_url"
 )
 
@@ -52,6 +52,12 @@ func (c *Client) Open(_ context.Context) error {
 }
 
 func (c *Client) Send(ctx context.Context, messages []client.Message) ([]error, error) {
+	// The relay is removed in our fork; fail each push instead of
+	// sending device tokens to a third party. Startup must not depend on it.
+	if c.baseURL() == "" {
+		return nil, errors.New("upstream push disabled")
+	}
+
 	payload := lo.Map(
 		messages,
 		func(item client.Message, _ int) smsgateway.PushNotification {
