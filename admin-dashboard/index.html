@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMS Gateway Admin</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --text: #1a1d23; --muted: #6b7280;
+    --border: #e3e5e8; --accent: #2563eb; --ok: #16a34a; --warn: #d97706; --err: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15171c; --card: #1e2128; --text: #e6e8eb; --muted: #9aa1ab; --border: #2c303a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
+  header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  main { max-width: 960px; margin: 0 auto; padding: 1.25rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; margin-bottom: 1.1rem; }
+  .card h2 { font-size: .95rem; margin: 0 0 .9rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; padding: .5rem .4rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; }
+  tr:last-child td { border-bottom: none; }
+  .state { padding: .1rem .5rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
+  .state.Delivered, .state.Sent, .state.Processed { background: rgba(22,163,74,.12); color: var(--ok); }
+  .state.Pending { background: rgba(217,119,6,.12); color: var(--warn); }
+  .state.Failed { background: rgba(220,38,38,.12); color: var(--err); }
+  button, input, select { font: inherit; }
+  input, select { padding: .5rem .6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); }
+  button { padding: .5rem .9rem; border: none; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; font-weight: 600; }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button.danger { background: var(--err); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: end; margin-bottom: .8rem; }
+  .row label { display: flex; flex-direction: column; gap: .25rem; font-size: .8rem; color: var(--muted); }
+  #login-screen { max-width: 380px; margin: 4rem auto; }
+  .muted { color: var(--muted); font-size: .85rem; }
+  .token-box { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: .7rem; font-family: monospace; font-size: .78rem; word-break: break-all; margin-top: .6rem; }
+  .err-msg { color: var(--err); font-size: .85rem; margin-top: .4rem; }
+  .pill { display: inline-block; padding: .1rem .5rem; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); font-size: .75rem; }
+  #app { display: none; }
+  .checks { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .checks label { flex-direction: row; align-items: center; gap: .3rem; font-size: .8rem; }
+</style>
+</head>
+<body>
+
+<div id="login-screen" class="card">
+  <h2 style="margin-bottom:.4rem">SMS Gateway Admin</h2>
+  <p class="muted">Log in with a device/user account's own credentials (shown on that phone's Home tab). This dashboard only ever sees what that account can already see via the API — nothing more.</p>
+  <div class="row" style="flex-direction:column; align-items:stretch">
+    <label>Username <input id="login-user" autocomplete="username"></label>
+    <label>Password <input id="login-pass" type="password" autocomplete="current-password"></label>
+  </div>
+  <button id="login-btn" style="width:100%">Log in</button>
+  <div class="err-msg" id="login-err"></div>
+  <p class="muted" style="margin-top:1rem">This stores credentials only in this browser tab's memory (never persisted). Base URL: <code id="base-url-display"></code></p>
+</div>
+
+<div id="app">
+<header>
+  <h1>SMS Gateway Admin — <span id="whoami"></span></h1>
+  <button class="secondary" id="logout-btn">Log out</button>
+</header>
+<main>
+
+  <div class="card">
+    <h2>Devices</h2>
+    <table>
+      <thead><tr><th>Device</th><th>SIM</th><th>Last seen</th><th>Created</th></tr></thead>
+      <tbody id="devices-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Send a test message</h2>
+    <div class="row">
+      <label>Phone number <input id="send-number" placeholder="+263..."></label>
+      <label>Message <input id="send-text" placeholder="Hello" style="width:260px"></label>
+      <button id="send-btn">Send</button>
+    </div>
+    <div id="send-result" class="muted"></div>
+  </div>
+
+  <div class="card">
+    <h2>Recent Messages</h2>
+    <div class="row">
+      <button class="secondary" id="refresh-messages-btn">Refresh</button>
+    </div>
+    <table>
+      <thead><tr><th>Sent</th><th>To</th><th>State</th><th>Text</th></tr></thead>
+      <tbody id="messages-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Issue an Integrator Token</h2>
+    <p class="muted">Creates a scoped Bearer token to hand to an external caller instead of sharing this account's password. See <code>docs/EXTERNAL-INTEGRATORS.md</code> for what to send them along with it.</p>
+    <div class="row checks" id="scope-checks"></div>
+    <div class="row">
+      <label>Valid for (days) <input id="token-days" type="number" value="90" style="width:80px"></label>
+      <button id="issue-token-btn">Issue token</button>
+    </div>
+    <div id="token-result"></div>
+    <p class="muted" style="margin-top:.6rem">⚠️ Tokens issued are shown once, here, in this session only. The API has no endpoint to list previously-issued tokens — copy it immediately, or re-issue a new one if lost (the old one still works until it expires or is revoked).</p>
+  </div>
+
+  <div class="card">
+    <h2>Revoke a Token</h2>
+    <div class="row">
+      <label>Token ID (jti) <input id="revoke-jti" placeholder="from the issue response above" style="width:260px"></label>
+      <button class="danger" id="revoke-btn">Revoke</button>
+    </div>
+    <div id="revoke-result" class="muted"></div>
+  </div>
+
+</main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var BASE = location.origin.replace(/^https?:\/\/admin\./, "https://sms.") ;
+  // Fallback: explicit override if the admin subdomain naming convention ever changes.
+  if (!/^https:\/\//.test(BASE)) BASE = "https://sms.territechnologies.com";
+  document.getElementById("base-url-display").textContent = BASE + "/api/3rdparty/v1";
+
+  var state = { user: null, pass: null };
+
+  var SCOPES = [
+    "messages:send", "messages:read", "messages:list", "messages:cancel", "messages:export",
+    "devices:list", "devices:delete",
+    "inbox:list", "inbox:read", "inbox:refresh",
+    "logs:read",
+    "settings:read", "settings:write",
+    "webhooks:list", "webhooks:write", "webhooks:delete"
+  ];
+
+  function api(path, opts) {
+    opts = opts || {};
+    var headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+    if (!opts.bearer) {
+      headers["Authorization"] = "Basic " + btoa(state.user + ":" + state.pass);
+    } else {
+      headers["Authorization"] = "Bearer " + opts.bearer;
+    }
+    return fetch(BASE + "/api/3rdparty/v1" + path, {
+      method: opts.method || "GET",
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + " " + t); });
+      var ct = r.headers.get("content-type") || "";
+      return ct.indexOf("json") >= 0 ? r.json() : r.text();
+    });
+  }
+
+  function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+  function fmtDate(s) { if (!s) return ""; try { return new Date(s).toLocaleString(); } catch (e) { return s; } }
+
+  function loadDevices() {
+    var tbody = document.getElementById("devices-body");
+    api("/device").then(function (list) {
+      if (!list.length) { tbody.innerHTML = '<tr><td colspan="4" class="muted">No devices registered under this account.</td></tr>'; return; }
+      tbody.innerHTML = list.map(function (d) {
+        var sims = (d.simCards || []).map(function (s) { return esc(s.carrierName || "") + " " + esc(s.phoneNumber || ""); }).join("<br>");
+        return "<tr><td>" + esc(d.name || d.id) + "<br><span class='muted'>" + esc(d.id) + "</span></td>" +
+          "<td>" + (sims || "<span class='muted'>—</span>") + "</td>" +
+          "<td>" + fmtDate(d.lastSeen) + "</td>" +
+          "<td>" + fmtDate(d.createdAt) + "</td></tr>";
+      }).join("");
+    }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="4" class="err-msg">' + esc(e.message) + "</td></tr>"; });
+  }
+
+  function loadMessages() {
+    var tbody = document.getElementById("messages-body");
+    api("/message").then(function (list) {
+      if (!list.length) { tbody.innerHTML = '<tr><td colspan="4" class="muted">No messages yet.</td></tr>'; return; }
+      tbody.innerHTML = list.slice(0, 25).map(function (m) {
+        var sentAt = m.states && (m.states.Pending || Object.values(m.states)[0]);
+        var to = (m.recipients || []).map(function (r) { return esc(r.phoneNumber); }).join(", ");
+        var text = m.textMessage ? m.textMessage.text : (m.isHashed ? "(hashed, content not retained)" : "");
+        return "<tr><td>" + fmtDate(sentAt) + "</td><td>" + to + "</td>" +
+          "<td><span class='state " + esc(m.state) + "'>" + esc(m.state) + "</span></td>" +
+          "<td>" + esc(text) + "</td></tr>";
+      }).join("");
+    }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="4" class="err-msg">' + esc(e.message) + "</td></tr>"; });
+  }
+
+  function buildScopeChecks() {
+    var el = document.getElementById("scope-checks");
+    el.innerHTML = SCOPES.map(function (s) {
+      var checked = (s === "messages:send" || s === "messages:read" || s === "messages:list") ? "checked" : "";
+      return '<label><input type="checkbox" value="' + s + '" ' + checked + '> ' + s + "</label>";
+    }).join("");
+  }
+
+  function doLogin() {
+    var u = document.getElementById("login-user").value.trim();
+    var p = document.getElementById("login-pass").value;
+    var errEl = document.getElementById("login-err");
+    errEl.textContent = "";
+    if (!u || !p) { errEl.textContent = "Enter a username and password."; return; }
+    state.user = u; state.pass = p;
+    api("/device").then(function () {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("whoami").textContent = u;
+      loadDevices();
+      loadMessages();
+      buildScopeChecks();
+    }).catch(function (e) {
+      errEl.textContent = "Login failed: " + e.message;
+      state.user = null; state.pass = null;
+    });
+  }
+
+  function doLogout() {
+    state.user = null; state.pass = null;
+    document.getElementById("login-pass").value = "";
+    document.getElementById("app").style.display = "none";
+    document.getElementById("login-screen").style.display = "block";
+  }
+
+  function doSend() {
+    var number = document.getElementById("send-number").value.trim();
+    var text = document.getElementById("send-text").value.trim();
+    var resultEl = document.getElementById("send-result");
+    if (!number || !text) { resultEl.textContent = "Enter a phone number and message text."; return; }
+    resultEl.textContent = "Sending…";
+    api("/message", { method: "POST", body: { message: text, phoneNumbers: [number] } })
+      .then(function (r) {
+        resultEl.innerHTML = "Sent — id <code>" + esc(r.id) + "</code>, state <span class='state " + esc(r.state) + "'>" + esc(r.state) + "</span>";
+        loadMessages();
+      })
+      .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
+  }
+
+  function doIssueToken() {
+    var days = parseInt(document.getElementById("token-days").value, 10) || 90;
+    var scopes = Array.prototype.slice.call(document.querySelectorAll("#scope-checks input:checked")).map(function (c) { return c.value; });
+    var resultEl = document.getElementById("token-result");
+    if (!scopes.length) { resultEl.innerHTML = "<span class='err-msg'>Select at least one scope.</span>"; return; }
+    resultEl.innerHTML = "<span class='muted'>Issuing…</span>";
+    api("/auth/token", { method: "POST", body: { ttl: days * 86400, scopes: scopes } })
+      .then(function (r) {
+        resultEl.innerHTML =
+          "<div class='token-box'><b>Token ID (jti):</b> " + esc(r.id) + "<br>" +
+          "<b>Access token:</b> " + esc(r.access_token) + "<br>" +
+          "<b>Refresh token:</b> " + esc(r.refresh_token) + "<br>" +
+          "<b>Expires:</b> " + fmtDate(r.expires_at) + "</div>" +
+          "<p class='muted'>Copy this now and send it with EXTERNAL-INTEGRATORS.md. It will not be shown again.</p>";
+      })
+      .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
+  }
+
+  function doRevoke() {
+    var jti = document.getElementById("revoke-jti").value.trim();
+    var resultEl = document.getElementById("revoke-result");
+    if (!jti) { resultEl.textContent = "Enter a token ID."; return; }
+    resultEl.textContent = "Revoking…";
+    api("/auth/token/" + encodeURIComponent(jti), { method: "DELETE" })
+      .then(function () { resultEl.textContent = "Revoked."; })
+      .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
+  }
+
+  document.getElementById("login-btn").addEventListener("click", doLogin);
+  document.getElementById("login-pass").addEventListener("keydown", function (e) { if (e.key === "Enter") doLogin(); });
+  document.getElementById("logout-btn").addEventListener("click", doLogout);
+  document.getElementById("send-btn").addEventListener("click", doSend);
+  document.getElementById("refresh-messages-btn").addEventListener("click", loadMessages);
+  document.getElementById("issue-token-btn").addEventListener("click", doIssueToken);
+  document.getElementById("revoke-btn").addEventListener("click", doRevoke);
+})();
+</script>
+</body>
+</html>
