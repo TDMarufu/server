@@ -37,6 +37,7 @@ func NewAuthHandler(
 
 func (h *AuthHandler) Register(router fiber.Router) {
 	router.Use(h.errorHandler)
+	router.Get("/token", permissions.RequireScope(ScopeTokensManage), userauth.WithUserID(h.listTokens))
 	router.Post("/token", permissions.RequireScope(ScopeTokensManage), userauth.WithUserID(h.postToken))
 	router.Post(
 		"/token/refresh",
@@ -44,6 +45,16 @@ func (h *AuthHandler) Register(router fiber.Router) {
 		h.postRefreshToken,
 	)
 	router.Delete("/token/:jti", permissions.RequireScope(ScopeTokensManage), userauth.WithUserID(h.deleteToken))
+}
+
+// TokenSummaryResponse is display-only metadata about a previously-issued token.
+// The raw signed token string is never returned here - it's only ever shown once,
+// in the response to the original POST /token call.
+type TokenSummaryResponse struct {
+	ID        string    `json:"id"`
+	Scopes    []string  `json:"scopes"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 //	@Summary		Generate token
@@ -86,6 +97,39 @@ func (h *AuthHandler) postToken(userID string, c *fiber.Ctx) error {
 		RefreshToken: pair.Refresh.Token,
 		ExpiresAt:    pair.Access.ExpiresAt,
 	})
+}
+
+//	@Summary		List tokens
+//	@Description	List your currently active (non-revoked, non-expired) access tokens
+//	@Security		ApiAuth
+//	@Security		JWTAuth
+//	@Tags			User, Auth
+//	@Produce		json
+//	@Success		200	{array}		thirdparty.TokenSummaryResponse	"Tokens"
+//	@Failure		401	{object}	smsgateway.ErrorResponse		"Unauthorized"
+//	@Failure		403	{object}	smsgateway.ErrorResponse		"Forbidden"
+//	@Failure		500	{object}	smsgateway.ErrorResponse		"Internal server error"
+//	@Failure		501	{object}	smsgateway.ErrorResponse		"Not implemented"
+//	@Router			/3rdparty/v1/auth/token [get]
+//
+// List tokens.
+func (h *AuthHandler) listTokens(userID string, c *fiber.Ctx) error {
+	tokens, err := h.jwtSvc.ListTokens(c.Context(), userID)
+	if err != nil {
+		return fmt.Errorf("failed to list tokens: %w", err)
+	}
+
+	res := make([]TokenSummaryResponse, 0, len(tokens))
+	for _, t := range tokens {
+		res = append(res, TokenSummaryResponse{
+			ID:        t.ID,
+			Scopes:    t.Scopes,
+			CreatedAt: t.CreatedAt,
+			ExpiresAt: t.ExpiresAt,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(res)
 }
 
 //	@Summary		Refresh token

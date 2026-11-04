@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -116,7 +117,7 @@ func (s *service) GenerateTokenPair(
 
 		if err = s.tokens.Insert(
 			ctx,
-			*newAccessTokenModel(userID, tokenInfo.Access),
+			*newAccessTokenModel(userID, tokenInfo.Access, scopes),
 			*newRefreshTokenModel(userID, tokenInfo.Access.ID, tokenInfo.Refresh),
 		); err != nil {
 			err = fmt.Errorf("failed to insert tokens: %w", err)
@@ -176,7 +177,7 @@ func (s *service) RefreshTokenPair(ctx context.Context, refreshToken string) (*T
 			ctx,
 			parsedClaims.ID,
 			*newRefreshTokenModel(parsedClaims.UserID, tokenPair.Access.ID, tokenPair.Refresh),
-			*newAccessTokenModel(parsedClaims.UserID, tokenPair.Access),
+			*newAccessTokenModel(parsedClaims.UserID, tokenPair.Access, parsedClaims.OriginalScopes),
 		); rotateErr != nil {
 			err = rotateErr
 			return
@@ -190,6 +191,30 @@ func (s *service) RefreshTokenPair(ctx context.Context, refreshToken string) (*T
 	}
 
 	return tokenPair, err
+}
+
+func (s *service) ListTokens(ctx context.Context, userID string) ([]TokenSummary, error) {
+	tokens, err := s.tokens.ListActiveByUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("can't list tokens: %w", err)
+	}
+
+	summaries := make([]TokenSummary, 0, len(tokens))
+	for _, t := range tokens {
+		var scopes []string
+		if t.Scopes != nil && *t.Scopes != "" {
+			scopes = strings.Split(*t.Scopes, ",")
+		}
+
+		summaries = append(summaries, TokenSummary{
+			ID:        t.ID,
+			Scopes:    scopes,
+			CreatedAt: t.CreatedAt,
+			ExpiresAt: t.ExpiresAt,
+		})
+	}
+
+	return summaries, nil
 }
 
 func (s *service) ParseToken(ctx context.Context, token string) (*Claims, error) {

@@ -106,6 +106,19 @@ func (r *Repository) persistTokens(tx *gorm.DB, tokens ...tokenModel) error {
 	return nil
 }
 
+func (r *Repository) ListActiveByUser(ctx context.Context, userID string) ([]tokenModel, error) {
+	var tokens []tokenModel
+
+	if err := r.db.WithContext(ctx).
+		Where("user_id = ? and token_use = ? and revoked_at is null and expires_at > NOW()", userID, accessToken).
+		Order("created_at desc").
+		Find(&tokens).Error; err != nil {
+		return nil, fmt.Errorf("can't list tokens: %w", err)
+	}
+
+	return tokens, nil
+}
+
 func (r *Repository) Cleanup(ctx context.Context, before time.Time) (int64, error) {
 	res := r.db.WithContext(ctx).
 		Where("expires_at < ?", before).

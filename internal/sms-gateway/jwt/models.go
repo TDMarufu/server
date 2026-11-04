@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/android-sms-gateway/server/internal/sms-gateway/models"
@@ -24,15 +25,22 @@ type tokenModel struct {
 	ParentJTI *string   `gorm:"type:char(21);index:idx_tokens_parent_jti"`
 	ExpiresAt time.Time `gorm:"not null;index:idx_tokens_expires_at"`
 	RevokedAt *time.Time
+	// Scopes is only populated on access-token rows, for the token-listing endpoint;
+	// the token's real scopes still live in its signed JWT claims and are re-validated
+	// from there on every request - this column is display metadata only.
+	Scopes *string `gorm:"type:varchar(512)"`
 }
 
-func newAccessTokenModel(userID string, token TokenInfo) *tokenModel {
+func newAccessTokenModel(userID string, token TokenInfo, scopes []string) *tokenModel {
+	joinedScopes := strings.Join(scopes, ",")
+
 	//nolint:exhaustruct // partial constructor
 	return &tokenModel{
 		ID:        token.ID,
 		UserID:    userID,
 		TokenUse:  accessToken,
 		ExpiresAt: token.ExpiresAt,
+		Scopes:    &joinedScopes,
 	}
 }
 

@@ -27,6 +27,11 @@ func (d *disabled) RefreshTokenPair(_ context.Context, _ string) (*TokenPairInfo
 	return nil, ErrDisabled
 }
 
+// ListTokens implements Service.
+func (d *disabled) ListTokens(_ context.Context, _ string) ([]TokenSummary, error) {
+	return nil, ErrDisabled
+}
+
 // ParseToken implements Service.
 func (d *disabled) ParseToken(_ context.Context, _ string) (*Claims, error) {
 	return nil, ErrDisabled
