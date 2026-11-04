@@ -38,6 +38,7 @@ RUN apk add --no-cache tzdata
 COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
 
 COPY --from=build /go/src/app /app
+COPY --from=build /go/src/admin-dashboard /app/admin-dashboard
 
 # Exposes port 3000 because our program listens on that port
 EXPOSE 3000

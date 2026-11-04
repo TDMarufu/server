@@ -34,6 +34,11 @@ func (h *rootHandler) Register(app *fiber.App) {
 	h.healthHandler.Register(app)
 
 	h.registerOpenAPI(app)
+
+	// Served same-origin so its fetch() calls to the API need no CORS handling
+	// (the server has no CORS middleware at all, intentionally). Baked into the
+	// Docker image (build/package/Dockerfile), same as the generated OpenAPI docs.
+	app.Static("/admin", "./admin-dashboard")
 }
 
 func (h *rootHandler) setLinkHeaders(c *fiber.Ctx) error {

@@ -104,16 +104,18 @@
       <button id="issue-token-btn">Issue token</button>
     </div>
     <div id="token-result"></div>
-    <p class="muted" style="margin-top:.6rem">⚠️ Tokens issued are shown once, here, in this session only. The API has no endpoint to list previously-issued tokens — copy it immediately, or re-issue a new one if lost (the old one still works until it expires or is revoked).</p>
+    <p class="muted" style="margin-top:.6rem">⚠️ The raw token is shown once, here, in this session only — copy it immediately, or re-issue a new one if lost (the old one still works until it expires or is revoked). You can still see and revoke it below by its ID without the raw value.</p>
   </div>
 
   <div class="card">
-    <h2>Revoke a Token</h2>
+    <h2>Issued Tokens</h2>
     <div class="row">
-      <label>Token ID (jti) <input id="revoke-jti" placeholder="from the issue response above" style="width:260px"></label>
-      <button class="danger" id="revoke-btn">Revoke</button>
+      <button class="secondary" id="refresh-tokens-btn">Refresh</button>
     </div>
-    <div id="revoke-result" class="muted"></div>
+    <table>
+      <thead><tr><th>ID (jti)</th><th>Scopes</th><th>Created</th><th>Expires</th><th></th></tr></thead>
+      <tbody id="tokens-body"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+    </table>
   </div>
 
 </main>
@@ -123,9 +125,9 @@
 (function () {
   "use strict";
 
-  var BASE = location.origin.replace(/^https?:\/\/admin\./, "https://sms.") ;
-  // Fallback: explicit override if the admin subdomain naming convention ever changes.
-  if (!/^https:\/\//.test(BASE)) BASE = "https://sms.territechnologies.com";
+  // Served same-origin by the API itself (see internal/sms-gateway/handlers/root.go),
+  // so no cross-origin/CORS handling is needed here.
+  var BASE = location.origin;
   document.getElementById("base-url-display").textContent = BASE + "/api/3rdparty/v1";
 
   var state = { user: null, pass: null };
@@ -190,6 +192,31 @@
     }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="4" class="err-msg">' + esc(e.message) + "</td></tr>"; });
   }
 
+  function loadTokens() {
+    var tbody = document.getElementById("tokens-body");
+    tbody.innerHTML = '<tr><td colspan="5" class="muted">Loading…</td></tr>';
+    api("/auth/token").then(function (list) {
+      if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="muted">No active tokens.</td></tr>'; return; }
+      tbody.innerHTML = list.map(function (t) {
+        return "<tr><td><code>" + esc(t.id) + "</code></td>" +
+          "<td>" + esc((t.scopes || []).join(", ")) + "</td>" +
+          "<td>" + fmtDate(t.created_at) + "</td>" +
+          "<td>" + fmtDate(t.expires_at) + "</td>" +
+          "<td><button class='danger' data-jti='" + esc(t.id) + "'>Revoke</button></td></tr>";
+      }).join("");
+      Array.prototype.slice.call(tbody.querySelectorAll("button[data-jti]")).forEach(function (btn) {
+        btn.addEventListener("click", function () { doRevokeToken(btn.getAttribute("data-jti")); });
+      });
+    }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="5" class="err-msg">' + esc(e.message) + "</td></tr>"; });
+  }
+
+  function doRevokeToken(jti) {
+    if (!confirm("Revoke token " + jti + "? Anyone using it loses access immediately.")) return;
+    api("/auth/token/" + encodeURIComponent(jti), { method: "DELETE" })
+      .then(function () { loadTokens(); })
+      .catch(function (e) { alert("Revoke failed: " + e.message); });
+  }
+
   function buildScopeChecks() {
     var el = document.getElementById("scope-checks");
     el.innerHTML = SCOPES.map(function (s) {
@@ -211,6 +238,7 @@
       document.getElementById("whoami").textContent = u;
       loadDevices();
       loadMessages();
+      loadTokens();
       buildScopeChecks();
     }).catch(function (e) {
       errEl.textContent = "Login failed: " + e.message;
@@ -253,17 +281,8 @@
           "<b>Refresh token:</b> " + esc(r.refresh_token) + "<br>" +
           "<b>Expires:</b> " + fmtDate(r.expires_at) + "</div>" +
           "<p class='muted'>Copy this now and send it with EXTERNAL-INTEGRATORS.md. It will not be shown again.</p>";
+        loadTokens();
       })
-      .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
-  }
-
-  function doRevoke() {
-    var jti = document.getElementById("revoke-jti").value.trim();
-    var resultEl = document.getElementById("revoke-result");
-    if (!jti) { resultEl.textContent = "Enter a token ID."; return; }
-    resultEl.textContent = "Revoking…";
-    api("/auth/token/" + encodeURIComponent(jti), { method: "DELETE" })
-      .then(function () { resultEl.textContent = "Revoked."; })
       .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
   }
 
@@ -273,7 +292,7 @@
   document.getElementById("send-btn").addEventListener("click", doSend);
   document.getElementById("refresh-messages-btn").addEventListener("click", loadMessages);
   document.getElementById("issue-token-btn").addEventListener("click", doIssueToken);
-  document.getElementById("revoke-btn").addEventListener("click", doRevoke);
+  document.getElementById("refresh-tokens-btn").addEventListener("click", loadTokens);
 })();
 </script>
 </body>
