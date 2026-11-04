@@ -42,8 +42,10 @@ credentials stop working. Check the app's Home tab for the current ones.
 curl -s -u "<username>:<password>" \
   -X POST https://sms.territechnologies.com/api/3rdparty/v1/message \
   -H "Content-Type: application/json" \
-  -d '{"message":"Hello from our server","phoneNumbers":["+263XXXXXXXXX"]}'
+  -d '{"textMessage":{"text":"Hello from our server"},"phoneNumbers":["+263XXXXXXXXX"]}'
 ```
+
+(The flat `message` field still works but is deprecated — use `textMessage`.)
 
 Response:
 ```json
@@ -58,6 +60,8 @@ Response:
 ```
 
 Save the `id` — it's the message ID for checking delivery status.
+
+For MMS, use `mmsMessage` instead of `textMessage` on the same endpoint, with `subject` and one or more Base64-encoded `attachments` — see [EXTERNAL-INTEGRATORS.md](EXTERNAL-INTEGRATORS.md#sending-mms) for the exact shape (same for both device credentials and scoped tokens).
 
 ## Checking Delivery Status
 
@@ -94,6 +98,11 @@ curl -s -u "<device-username>:<device-password>" \
   `webhooks:list`, `webhooks:write`, `webhooks:delete`.
 - The response includes `access_token` and `refresh_token` — give the external
   party both plus [EXTERNAL-INTEGRATORS.md](EXTERNAL-INTEGRATORS.md).
+- To see what you've issued later: `GET /api/3rdparty/v1/auth/token` lists active
+  (non-revoked, non-expired) tokens for the account, with their scopes and dates
+  — but never the raw token string, which is only ever shown once at issuance.
+  The [admin dashboard](../admin-dashboard/index.html) (served at `/admin`) gives
+  you this plus issue/revoke without hand-rolling curl.
 - To revoke it later: `DELETE /api/3rdparty/v1/auth/token/<jti>` (the `jti` is
   the `id` field from the original token response), authenticated with the
   device credentials that issued it.

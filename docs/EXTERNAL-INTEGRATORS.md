@@ -22,8 +22,10 @@ token with exactly the scopes you need.
 curl -s -H "Authorization: Bearer <your-token>" \
   -X POST https://sms.territechnologies.com/api/3rdparty/v1/message \
   -H "Content-Type: application/json" \
-  -d '{"message":"Hello","phoneNumbers":["+263XXXXXXXXX"]}'
+  -d '{"textMessage":{"text":"Hello"},"phoneNumbers":["+263XXXXXXXXX"]}'
 ```
+
+(The flat `message` field shown in older examples still works but is deprecated — use `textMessage` going forward.)
 
 Response:
 ```json
@@ -35,6 +37,19 @@ Response:
   "textMessage": {"text": "Hello"}
 }
 ```
+
+### Sending MMS
+
+Same endpoint, `mmsMessage` instead of `textMessage`, with one or more Base64-encoded attachments:
+
+```bash
+curl -s -H "Authorization: Bearer <your-token>" \
+  -X POST https://sms.territechnologies.com/api/3rdparty/v1/message \
+  -H "Content-Type: application/json" \
+  -d '{"mmsMessage":{"subject":"Hello","attachments":[{"contentType":"image/jpeg","data":"<base64-encoded-bytes>"}]},"phoneNumbers":["+263XXXXXXXXX"]}'
+```
+
+Requires the same `messages:send` scope — no separate MMS scope exists.
 
 Check status with the returned `id`:
 ```bash
