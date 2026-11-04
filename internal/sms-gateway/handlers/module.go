@@ -7,6 +7,7 @@ import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/logs"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/messages"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/settings"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/statuswebhooks"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/thirdparty"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/webhooks"
 	"github.com/capcom6/go-infra-fx/http"
@@ -33,6 +34,7 @@ func Module() fx.Option {
 			messages.NewMobileController,
 			webhooks.NewThirdPartyController,
 			webhooks.NewMobileController,
+			statuswebhooks.NewThirdPartyController,
 			devices.NewThirdPartyController,
 			settings.NewThirdPartyController,
 			settings.NewMobileController,

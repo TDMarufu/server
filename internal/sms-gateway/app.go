@@ -18,6 +18,7 @@ import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/push"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/settings"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/sse"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/statuswebhooks"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/webhooks"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/online"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/openapi"
@@ -57,6 +58,7 @@ func Module() fx.Option {
 		messages.Module(),
 		health.Module(),
 		webhooks.Module(),
+		statuswebhooks.Module(),
 		settings.Module(),
 		devices.Module(),
 		metrics.Module(),

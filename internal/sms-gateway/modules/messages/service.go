@@ -12,6 +12,7 @@ import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/db"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/devices"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/events"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/statuswebhooks"
 	"github.com/capcom6/go-helpers/anys"
 	"github.com/capcom6/go-helpers/slices"
 	"github.com/nyaruka/phonenumbers"
@@ -26,9 +27,10 @@ type EnqueueOptions struct {
 type Service struct {
 	config Config
 
-	limiter   *Limiter
-	messages  *Repository
-	eventsSvc *events.Service
+	limiter            *Limiter
+	messages           *Repository
+	eventsSvc          *events.Service
+	statusWebhooksSvc  *statuswebhooks.Service
 
 	metrics       *metrics
 	cache         *stateCache
@@ -44,6 +46,7 @@ func NewService(
 	limiter *Limiter,
 	messages *Repository,
 	eventsSvc *events.Service,
+	statusWebhooksSvc *statuswebhooks.Service,
 
 	metrics *metrics,
 	cache *stateCache,
@@ -55,9 +58,10 @@ func NewService(
 	return &Service{
 		config: config,
 
-		limiter:   limiter,
-		messages:  messages,
-		eventsSvc: eventsSvc,
+		limiter:           limiter,
+		messages:          messages,
+		eventsSvc:         eventsSvc,
+		statusWebhooksSvc: statusWebhooksSvc,
 
 		metrics:       metrics,
 		cache:         cache,
@@ -137,7 +141,35 @@ func (s *Service) UpdateState(device *devices.Device, message MessageStateInput)
 	s.hashingWorker.Enqueue(existing.ID)
 	s.metrics.IncTotal(string(existing.State))
 
+	s.notifyStatusWebhooks(device.UserID, existing.ExtID, device.ID, existing.State)
+
 	return nil
+}
+
+// notifyStatusWebhooks publishes a message-status-change event for async delivery
+// to any registered status webhooks (see modules/statuswebhooks). Only terminal/
+// notable states are mapped; intermediate states (Pending, Processed, Cancelling)
+// are not surfaced as integrator-facing events.
+func (s *Service) notifyStatusWebhooks(userID, messageID, deviceID string, state ProcessingState) {
+	event, ok := map[ProcessingState]string{
+		ProcessingStateSent:      statuswebhooks.EventMessageSent,
+		ProcessingStateDelivered: statuswebhooks.EventMessageDelivered,
+		ProcessingStateFailed:    statuswebhooks.EventMessageFailed,
+		ProcessingStateCancelled: statuswebhooks.EventMessageCancelled,
+	}[state]
+	if !ok {
+		return
+	}
+
+	if err := s.statusWebhooksSvc.Notify(userID, statuswebhooks.StatusChangedEvent{
+		Event:     event,
+		MessageID: messageID,
+		DeviceID:  deviceID,
+		State:     string(state),
+		Timestamp: time.Now(),
+	}); err != nil {
+		s.logger.Warn("failed to notify status webhooks", zap.String("id", messageID), zap.Error(err))
+	}
 }
 
 func (s *Service) SelectStates(

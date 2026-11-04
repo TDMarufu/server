@@ -9,6 +9,7 @@ import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/middlewares/jwtauth"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/middlewares/userauth"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/settings"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/statuswebhooks"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/thirdparty"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/webhooks"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/jwt"
@@ -24,14 +25,15 @@ type thirdPartyHandler struct {
 	usersSvc *users.Service
 	jwtSvc   jwt.Service
 
-	healthHandler   *HealthHandler
-	messagesHandler *messages.ThirdPartyController
-	webhooksHandler *webhooks.ThirdPartyController
-	devicesHandler  *devices.ThirdPartyController
-	settingsHandler *settings.ThirdPartyController
-	inboxHandler    *inbox.ThirdPartyController
-	logsHandler     *logs.ThirdPartyController
-	authHandler     *thirdparty.AuthHandler
+	healthHandler         *HealthHandler
+	messagesHandler       *messages.ThirdPartyController
+	webhooksHandler       *webhooks.ThirdPartyController
+	statusWebhooksHandler *statuswebhooks.ThirdPartyController
+	devicesHandler        *devices.ThirdPartyController
+	settingsHandler       *settings.ThirdPartyController
+	inboxHandler          *inbox.ThirdPartyController
+	logsHandler           *logs.ThirdPartyController
+	authHandler           *thirdparty.AuthHandler
 }
 
 func newThirdPartyHandler(
@@ -41,6 +43,7 @@ func newThirdPartyHandler(
 	healthHandler *HealthHandler,
 	messagesHandler *messages.ThirdPartyController,
 	webhooksHandler *webhooks.ThirdPartyController,
+	statusWebhooksHandler *statuswebhooks.ThirdPartyController,
 	devicesHandler *devices.ThirdPartyController,
 	settingsHandler *settings.ThirdPartyController,
 	inboxHandler *inbox.ThirdPartyController,
@@ -59,14 +62,15 @@ func newThirdPartyHandler(
 		usersSvc: usersSvc,
 		jwtSvc:   jwtService,
 
-		healthHandler:   healthHandler,
-		messagesHandler: messagesHandler,
-		webhooksHandler: webhooksHandler,
-		devicesHandler:  devicesHandler,
-		settingsHandler: settingsHandler,
-		inboxHandler:    inboxHandler,
-		logsHandler:     logsHandler,
-		authHandler:     authHandler,
+		healthHandler:         healthHandler,
+		messagesHandler:       messagesHandler,
+		webhooksHandler:       webhooksHandler,
+		statusWebhooksHandler: statusWebhooksHandler,
+		devicesHandler:        devicesHandler,
+		settingsHandler:       settingsHandler,
+		inboxHandler:          inboxHandler,
+		logsHandler:           logsHandler,
+		authHandler:           authHandler,
 	}
 }
 
@@ -99,6 +103,7 @@ func (h *thirdPartyHandler) Register(router fiber.Router) {
 	h.inboxHandler.Register(router.Group("/inbox"))
 
 	h.webhooksHandler.Register(router.Group("/webhooks"))
+	h.statusWebhooksHandler.Register(router.Group("/status-webhooks"))
 
 	h.logsHandler.Register(router.Group("/logs"))
 }

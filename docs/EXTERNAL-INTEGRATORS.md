@@ -11,6 +11,8 @@ A **scoped Bearer token**, not a username/password. It can only:
 - send messages (`messages:send`)
 - read a message's status (`messages:read`)
 - list sent messages (`messages:list`)
+- optionally, register a status webhook (`status-webhooks:write`) so you don't
+  have to poll — see below
 
 It cannot register/remove devices, change settings, read incoming SMS, or
 manage other tokens. If you need different access, ask us — we issue a new
@@ -71,6 +73,40 @@ Typically under a second if the phone is online.
   ```
 - If your access token expires and you don't have a valid refresh token, ask
   us to issue a new pair.
+
+## Getting notified instead of polling
+
+If you'd rather not poll `/message/<id>` repeatedly, register a status webhook
+(needs the `status-webhooks:write` scope — ask us to include it):
+
+```bash
+curl -s -H "Authorization: Bearer <your-token>" \
+  -X POST https://sms.territechnologies.com/api/3rdparty/v1/status-webhooks \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://your-app.example.com/sms-status","events":["message.sent","message.delivered","message.failed"]}'
+```
+
+Response (the `secret` is only ever shown here, at creation/update — it's never
+returned again):
+```json
+{"id":"...","url":"https://your-app.example.com/sms-status","events":["message.sent","message.delivered","message.failed"],"secret":"...","disabled":false}
+```
+
+On each matching event, we `POST` to your URL:
+```json
+{"event":"message.sent","messageId":"dKXOTwhzNLbY_yEwu4oMM","deviceId":"ZK3TUG2GzrgoPX4iM6E-e","state":"Sent","timestamp":"2026-11-04T12:00:00Z"}
+```
+with a signature header you should verify:
+```
+X-Signature-256: sha256=<hex-encoded HMAC-SHA256 of the raw request body, using your secret as the key>
+```
+Reject the request if the signature doesn't match — that's how you know it
+genuinely came from us and wasn't forged.
+
+Your URL must be `https://`. We retry a failed delivery once; after 20
+consecutive failed events the webhook is automatically disabled (re-register
+it to reactivate once your endpoint is fixed). List your webhooks with
+`GET /status-webhooks`, remove one with `DELETE /status-webhooks/<id>`.
 
 ## If your token is compromised
 
