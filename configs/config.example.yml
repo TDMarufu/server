@@ -18,7 +18,7 @@ database: # database
 gateway: # gateway config
   mode: private # gateway mode (public - allow anonymous device registration, private - protected registration) [GATEWAY__MODE]
   private_token: 123456789 # access token for device registration in private mode [GATEWAY__PRIVATE_TOKEN]
-  upstream_url: https://api.sms-gate.app/upstream/v1 # upstream server URL for private-mode push notifications [GATEWAY__UPSTREAM_URL]
+  upstream_url: # upstream server URL for private-mode push fallback; intentionally empty by default so private mode never silently relays through a third party - only set this if you explicitly want that fallback when no FCM credentials are configured [GATEWAY__UPSTREAM_URL]
 http: # http server config
   listen: 127.0.0.1:3000 # listen address [HTTP__LISTEN]
   proxies:
@@ -43,8 +43,8 @@ pubsub: # pubsub config
   url: memory:// # pubsub url (memory:// or redis://) [PUBSUB__URL]
 jwt:
   secret: # jwt secret (leave empty to disable JWT functionality) [JWT__SECRET]
-  access_ttl: 15m # access token ttl [JWT__ACCESS_TTL]
-  refresh_ttl: 720h # refresh token ttl [JWT__REFRESH_TTL]
+  access_ttl: 2160h # access token ttl - matches docs/EXTERNAL-INTEGRATORS.md's documented ~90-day token lifetime [JWT__ACCESS_TTL]
+  refresh_ttl: 4320h # refresh token ttl [JWT__REFRESH_TTL]
   issuer: # jwt issuer [JWT__ISSUER]
 otp: # otp config
   enabled: true # enable one-time code authentication for device registration [OTP__ENABLED]
