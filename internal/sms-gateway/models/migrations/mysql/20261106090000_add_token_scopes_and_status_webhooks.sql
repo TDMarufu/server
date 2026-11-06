@@ -1,9 +1,9 @@
 -- +goose Up
 -- +goose StatementBegin
-ALTER TABLE `tokens` ADD COLUMN `scopes` varchar(512) NULL AFTER `revoked_at`;
+ALTER TABLE `tokens` ADD COLUMN IF NOT EXISTS `scopes` varchar(512) NULL AFTER `revoked_at`;
 -- +goose StatementEnd
 -- +goose StatementBegin
-CREATE TABLE `status_webhooks` (
+CREATE TABLE IF NOT EXISTS `status_webhooks` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `ext_id` varchar(36) NOT NULL,
     `user_id` varchar(32) NOT NULL,
