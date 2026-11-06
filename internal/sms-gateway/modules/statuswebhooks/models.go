@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/android-sms-gateway/server/internal/sms-gateway/models"
-	"github.com/android-sms-gateway/server/internal/sms-gateway/users"
 	"gorm.io/gorm"
 )
 
@@ -28,8 +27,6 @@ type StatusWebhook struct {
 	// doesn't get hammered forever. Re-saving the webhook (Replace) resets both.
 	Disabled     bool `json:"disabled"      gorm:"not null;default:false"`
 	FailureCount int  `json:"-"             gorm:"not null;default:0"`
-
-	User users.User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 }
 
 func newStatusWebhook(extID, url, secret, events, userID string) *StatusWebhook {
