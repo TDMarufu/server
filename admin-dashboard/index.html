@@ -125,9 +125,14 @@
 (function () {
   "use strict";
 
-  // Served same-origin by the API itself (see internal/sms-gateway/handlers/root.go),
-  // so no cross-origin/CORS handling is needed here.
-  var BASE = location.origin;
+  // Two supported deployments: same-origin (served by the API itself at /admin,
+  // see internal/sms-gateway/handlers/root.go - no CORS needed), or the separate
+  // admin.<domain> static site in production, which calls the API cross-origin
+  // and relies on the sms-gateway-cors Traefik middleware already configured for
+  // that origin. Detect which by hostname.
+  var BASE = /^admin\./.test(location.hostname)
+    ? location.origin.replace(/^(https?:\/\/)admin\./, "$1sms.")
+    : location.origin;
   document.getElementById("base-url-display").textContent = BASE + "/api/3rdparty/v1";
 
   var state = { user: null, pass: null };
