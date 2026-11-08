@@ -67,6 +67,16 @@
 <main>
 
   <div class="card">
+    <h2>Subscription</h2>
+    <p id="subscription-status" class="muted">Loading…</p>
+    <div class="row">
+      <button id="subscribe-btn">Subscribe / Renew ($25/month)</button>
+      <button class="secondary" id="refresh-subscription-btn">Refresh status</button>
+    </div>
+    <div id="subscription-result" class="muted"></div>
+  </div>
+
+  <div class="card">
     <h2>Devices</h2>
     <table>
       <thead><tr><th>Device</th><th>SIM</th><th>Last seen</th><th>Created</th></tr></thead>
@@ -168,6 +178,27 @@
   function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
   function fmtDate(s) { if (!s) return ""; try { return new Date(s).toLocaleString(); } catch (e) { return s; } }
 
+  function loadSubscription() {
+    var statusEl = document.getElementById("subscription-status");
+    statusEl.textContent = "Loading…";
+    api("/billing/status").then(function (s) {
+      if (s.active) {
+        statusEl.innerHTML = "<span class='state Sent'>Active</span> — renews/expires " + fmtDate(s.currentPeriodEnd);
+      } else {
+        statusEl.innerHTML = "<span class='state Failed'>Not active</span> — sending messages will be blocked until you subscribe.";
+      }
+    }).catch(function (e) { statusEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
+  }
+
+  function doSubscribe() {
+    var resultEl = document.getElementById("subscription-result");
+    resultEl.textContent = "Starting payment…";
+    api("/billing/subscribe", { method: "POST" }).then(function (r) {
+      resultEl.innerHTML = "Redirecting you to Pesepay to pay — if nothing happens, <a href=\"" + esc(r.redirectUrl) + "\" target=\"_blank\">click here</a>.";
+      window.open(r.redirectUrl, "_blank");
+    }).catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
+  }
+
   function loadDevices() {
     var tbody = document.getElementById("devices-body");
     api("/device").then(function (list) {
@@ -241,6 +272,7 @@
       document.getElementById("login-screen").style.display = "none";
       document.getElementById("app").style.display = "block";
       document.getElementById("whoami").textContent = u;
+      loadSubscription();
       loadDevices();
       loadMessages();
       loadTokens();
@@ -298,6 +330,8 @@
   document.getElementById("refresh-messages-btn").addEventListener("click", loadMessages);
   document.getElementById("issue-token-btn").addEventListener("click", doIssueToken);
   document.getElementById("refresh-tokens-btn").addEventListener("click", loadTokens);
+  document.getElementById("subscribe-btn").addEventListener("click", doSubscribe);
+  document.getElementById("refresh-subscription-btn").addEventListener("click", loadSubscription);
 })();
 </script>
 </body>
