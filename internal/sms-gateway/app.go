@@ -10,6 +10,7 @@ import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/inbox"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/jwt"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/auth"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/billing"
 	appdb "github.com/android-sms-gateway/server/internal/sms-gateway/modules/db"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/devices"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/events"
@@ -67,6 +68,7 @@ func Module() fx.Option {
 		jwt.Module(),
 		otp.Module(),
 		inbox.Module(),
+		billing.Module(),
 	)
 }
 

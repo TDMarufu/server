@@ -22,6 +22,7 @@ type Config struct {
 	PubSub   PubSub    `yaml:"pubsub"`   // pubsub (memory or redis) config
 	JWT      JWT       `yaml:"jwt"`      // jwt config
 	OTP      OTP       `yaml:"otp"`      // one-time password config
+	Billing  Billing   `yaml:"billing"`  // pesepay subscription billing config
 }
 
 type Gateway struct {
@@ -115,6 +116,18 @@ type OTP struct {
 	Retries uint8  `yaml:"retries" envconfig:"OTP__RETRIES"` // otp generation retries (collision handling)
 }
 
+type Billing struct {
+	PesepayIntegrationKey string `yaml:"pesepay_integration_key" envconfig:"BILLING__PESEPAY_INTEGRATION_KEY"`
+	PesepayEncryptionKey  string `yaml:"pesepay_encryption_key"  envconfig:"BILLING__PESEPAY_ENCRYPTION_KEY"`
+	PesepaySandbox        bool   `yaml:"pesepay_sandbox"         envconfig:"BILLING__PESEPAY_SANDBOX"`
+
+	MonthlyPrice float64 `yaml:"monthly_price" envconfig:"BILLING__MONTHLY_PRICE"`
+	Currency     string  `yaml:"currency"      envconfig:"BILLING__CURRENCY"`
+
+	ResultURL string `yaml:"result_url" envconfig:"BILLING__RESULT_URL"`
+	ReturnURL string `yaml:"return_url" envconfig:"BILLING__RETURN_URL"`
+}
+
 func Default() Config {
 	//nolint:exhaustruct,mnd,goconst // default values
 	return Config{
@@ -169,6 +182,11 @@ func Default() Config {
 			Length:  6,
 			TTL:     60,
 			Retries: 3,
+		},
+		Billing: Billing{
+			PesepaySandbox: true,
+			MonthlyPrice:   25.00,
+			Currency:       "USD",
 		},
 	}
 }

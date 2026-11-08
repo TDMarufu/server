@@ -18,6 +18,7 @@ type Tasks struct {
 	DevicesCleanup  DevicesCleanup  `yaml:"devices_cleanup"`
 	TokensCleanup   TokensCleanup   `yaml:"tokens_cleanup"`
 	InboxCleanup    InboxCleanup    `yaml:"inbox_cleanup"`
+	BillingExpire   BillingExpire   `yaml:"billing_expire"`
 }
 type MessagesHashing struct {
 	Interval Duration `yaml:"interval" envconfig:"TASKS__MESSAGES_HASHING__INTERVAL"`
@@ -43,6 +44,10 @@ type InboxCleanup struct {
 	MaxAge   Duration `yaml:"max_age"  envconfig:"TASKS__INBOX_CLEANUP__MAX_AGE"`
 }
 
+type BillingExpire struct {
+	Interval Duration `yaml:"interval" envconfig:"TASKS__BILLING_EXPIRE__INTERVAL"`
+}
+
 func Default() Config {
 	//nolint:exhaustruct,mnd,goconst // default values
 	return Config{
@@ -65,6 +70,9 @@ func Default() Config {
 			InboxCleanup: InboxCleanup{
 				Interval: Duration(24 * time.Hour),
 				MaxAge:   Duration(30 * 24 * time.Hour),
+			},
+			BillingExpire: BillingExpire{
+				Interval: Duration(24 * time.Hour),
 			},
 		},
 		Database: config.Database{

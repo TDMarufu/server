@@ -51,6 +51,14 @@ otp: # otp config
   length: 6 # otp code length (min 6) [OTP__LENGTH]
   ttl: 60 # otp ttl in seconds [OTP__TTL]
   retries: 3 # otp generation retries (collision handling) [OTP__RETRIES]
+billing: # pesepay subscription billing config
+  pesepay_integration_key: # [BILLING__PESEPAY_INTEGRATION_KEY]
+  pesepay_encryption_key: # [BILLING__PESEPAY_ENCRYPTION_KEY]
+  pesepay_sandbox: true # use Pesepay's sandbox API - set false in production [BILLING__PESEPAY_SANDBOX]
+  monthly_price: 25.00 # flat monthly subscription price [BILLING__MONTHLY_PRICE]
+  currency: USD # [BILLING__CURRENCY]
+  result_url: # Pesepay payment-result callback URL, e.g. https://sms.territechnologies.com/api/3rdparty/v1/billing/pesepay/callback [BILLING__RESULT_URL]
+  return_url: # where Pesepay redirects the client back to after paying [BILLING__RETURN_URL]
 
 ## Worker Config ##
 
@@ -66,3 +74,5 @@ tasks: # tasks config
   tokens_cleanup:
     interval: 24h # task execution interval [TASKS__TOKENS_CLEANUP__INTERVAL]
     max_age: 1h # grace period past expiration before deletion [TASKS__TOKENS_CLEANUP__MAX_AGE]
+  billing_expire:
+    interval: 24h # how often to log newly-expired subscriptions; access control itself is date-based, not driven by this task [TASKS__BILLING_EXPIRE__INTERVAL]

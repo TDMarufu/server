@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/base"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/billing"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/devices"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/inbox"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/logs"
@@ -29,6 +30,7 @@ type thirdPartyHandler struct {
 	messagesHandler       *messages.ThirdPartyController
 	webhooksHandler       *webhooks.ThirdPartyController
 	statusWebhooksHandler *statuswebhooks.ThirdPartyController
+	billingHandler        *billing.ThirdPartyController
 	devicesHandler        *devices.ThirdPartyController
 	settingsHandler       *settings.ThirdPartyController
 	inboxHandler          *inbox.ThirdPartyController
@@ -44,6 +46,7 @@ func newThirdPartyHandler(
 	messagesHandler *messages.ThirdPartyController,
 	webhooksHandler *webhooks.ThirdPartyController,
 	statusWebhooksHandler *statuswebhooks.ThirdPartyController,
+	billingHandler *billing.ThirdPartyController,
 	devicesHandler *devices.ThirdPartyController,
 	settingsHandler *settings.ThirdPartyController,
 	inboxHandler *inbox.ThirdPartyController,
@@ -66,6 +69,7 @@ func newThirdPartyHandler(
 		messagesHandler:       messagesHandler,
 		webhooksHandler:       webhooksHandler,
 		statusWebhooksHandler: statusWebhooksHandler,
+		billingHandler:        billingHandler,
 		devicesHandler:        devicesHandler,
 		settingsHandler:       settingsHandler,
 		inboxHandler:          inboxHandler,
@@ -84,6 +88,7 @@ func (h *thirdPartyHandler) Register(router fiber.Router) {
 	})
 
 	h.healthHandler.Register(router)
+	h.billingHandler.RegisterPublic(router)
 
 	router.Use(
 		userauth.NewBasic(h.usersSvc),
@@ -92,6 +97,7 @@ func (h *thirdPartyHandler) Register(router fiber.Router) {
 	)
 
 	h.authHandler.Register(router.Group("/auth"))
+	h.billingHandler.Register(router.Group("/billing"))
 
 	h.messagesHandler.Register(router.Group("/message")) // TODO: remove after 2025-12-31
 	h.messagesHandler.Register(router.Group("/messages"))

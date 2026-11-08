@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/android-sms-gateway/server/internal/worker/server"
+	"github.com/android-sms-gateway/server/internal/worker/tasks/billing"
 	"github.com/android-sms-gateway/server/internal/worker/tasks/devices"
 	"github.com/android-sms-gateway/server/internal/worker/tasks/inbox"
 	"github.com/android-sms-gateway/server/internal/worker/tasks/messages"
@@ -76,6 +77,11 @@ func Module() fx.Option {
 					Interval: time.Duration(cfg.Tasks.InboxCleanup.Interval),
 					MaxAge:   time.Duration(cfg.Tasks.InboxCleanup.MaxAge),
 				},
+			}
+		}),
+		fx.Provide(func(cfg Config) billing.Config {
+			return billing.Config{
+				Interval: time.Duration(cfg.Tasks.BillingExpire.Interval),
 			}
 		}),
 		fx.Provide(func(cfg Config) server.Config {

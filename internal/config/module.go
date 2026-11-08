@@ -8,6 +8,7 @@ import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/inbox"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/jwt"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/auth"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/billing"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/devices"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/messages"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/push"
@@ -167,6 +168,19 @@ func Module() fx.Option {
 				Length:  int(cfg.OTP.Length),
 				TTL:     time.Duration(cfg.OTP.TTL) * time.Second,
 				Retries: int(cfg.OTP.Retries),
+			}
+		}),
+		fx.Provide(func(cfg Config) billing.Config {
+			return billing.Config{
+				IntegrationKey: cfg.Billing.PesepayIntegrationKey,
+				EncryptionKey:  cfg.Billing.PesepayEncryptionKey,
+				Sandbox:        cfg.Billing.PesepaySandbox,
+
+				MonthlyPrice: cfg.Billing.MonthlyPrice,
+				Currency:     cfg.Billing.Currency,
+
+				ResultURL: cfg.Billing.ResultURL,
+				ReturnURL: cfg.Billing.ReturnURL,
 			}
 		}),
 	)

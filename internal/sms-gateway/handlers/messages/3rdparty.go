@@ -12,6 +12,7 @@ import (
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/middlewares/permissions"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/handlers/middlewares/userauth"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/inbox"
+	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/billing"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/devices"
 	"github.com/android-sms-gateway/server/internal/sms-gateway/modules/messages"
 	"github.com/capcom6/go-helpers/slices"
@@ -32,6 +33,7 @@ type thirdPartyControllerParams struct {
 	MessagesSvc *messages.Service
 	DevicesSvc  *devices.Service
 	InboxSvc    *inbox.Service
+	BillingSvc  *billing.Service
 
 	Validator *validator.Validate
 	Logger    *zap.Logger
@@ -43,6 +45,7 @@ type ThirdPartyController struct {
 	messagesSvc *messages.Service
 	devicesSvc  *devices.Service
 	inboxSvc    *inbox.Service
+	billingSvc  *billing.Service
 }
 
 func NewThirdPartyController(params thirdPartyControllerParams) *ThirdPartyController {
@@ -55,6 +58,7 @@ func NewThirdPartyController(params thirdPartyControllerParams) *ThirdPartyContr
 		messagesSvc: params.MessagesSvc,
 		devicesSvc:  params.DevicesSvc,
 		inboxSvc:    params.InboxSvc,
+		billingSvc:  params.BillingSvc,
 	}
 }
 
@@ -80,6 +84,16 @@ func NewThirdPartyController(params thirdPartyControllerParams) *ThirdPartyContr
 //
 // Enqueue message.
 func (h *ThirdPartyController) post(userID string, c *fiber.Ctx) error {
+	active, err := h.billingSvc.IsActive(c.Context(), userID)
+	if err != nil {
+		h.Logger.Error("failed to check subscription status", zap.Error(err), zap.String("user_id", userID))
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to check subscription status")
+	}
+	if !active {
+		return fiber.NewError(fiber.StatusPaymentRequired,
+			"subscription required - POST /3rdparty/v1/billing/subscribe to pay")
+	}
+
 	var params thirdPartyPostQueryParams
 	if err := h.QueryParserValidator(c, &params); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())

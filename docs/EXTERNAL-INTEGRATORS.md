@@ -18,6 +18,17 @@ It cannot register/remove devices, change settings, read incoming SMS, or
 manage other tokens. If you need different access, ask us — we issue a new
 token with exactly the scopes you need.
 
+## Subscription required
+
+Sending messages (`messages:send`) requires an active $25/month subscription
+on the account the token belongs to, paid via Pesepay. If it's lapsed or never
+started, you'll get:
+
+```json
+{"message": "subscription required - POST /3rdparty/v1/billing/subscribe to pay"}
+```
+with HTTP status `402 Payment Required`. See `docs/BILLING.md` for how to pay.
+
 ## Using the token
 
 ```bash
