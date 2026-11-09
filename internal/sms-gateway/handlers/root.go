@@ -39,6 +39,10 @@ func (h *rootHandler) Register(app *fiber.App) {
 	// (the server has no CORS middleware at all, intentionally). Baked into the
 	// Docker image (build/package/Dockerfile), same as the generated OpenAPI docs.
 	app.Static("/admin", "./admin-dashboard")
+
+	// Public marketing/landing page at the bare root - "/" was otherwise unclaimed
+	// (404). Also baked into the image the same way.
+	app.Static("/", "./landing")
 }
 
 func (h *rootHandler) setLinkHeaders(c *fiber.Ctx) error {

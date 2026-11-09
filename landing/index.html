@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMS Gateway</title>
+<meta name="description" content="Self-hosted SMS/MMS gateway — turn an Android phone into a programmable API, with end-to-end encryption and no third party in the loop.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /*
+   * Structurally modelled on recharge/frontend's public HomePage.tsx + PublicExtras.tsx
+   * end to end (announcement bar, header, two-column hero, "why choose us" grid, contact
+   * banner, partners/use-cases strip, footer) - but with our own copy, visual identity
+   * (the "ink" palette already used by admin-dashboard/index.html, not Recharge's indigo),
+   * and only the things this product actually does. No Recharge branding, logo or text
+   * is reused anywhere.
+   */
+  :root {
+    --ink-50: #f6f7f9; --ink-100: #eceef2; --ink-200: #d5dae2; --ink-300: #b0bac9;
+    --ink-400: #8494ab; --ink-500: #647691; --ink-600: #4f5e78; --ink-700: #414d62;
+    --ink-800: #384253; --ink-900: #323a47; --ink-950: #21262f;
+    --ok: #15803d; --err: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--ink-50); color: var(--ink-900); -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 1.25rem; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+  /* ---- Announcement bar ---- */
+  .announce {
+    background: linear-gradient(90deg, var(--ink-900), var(--ink-700), var(--ink-900));
+    color: #fff; text-align: center; font-size: .82rem; padding: .55rem 2.2rem; position: relative;
+  }
+  .announce strong { font-weight: 700; }
+  .announce .dismiss {
+    position: absolute; right: .9rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: rgba(255,255,255,.75); font-size: 1.1rem; cursor: pointer;
+  }
+
+  /* ---- Header ---- */
+  header {
+    background: #fff; border-bottom: 1px solid var(--ink-200); padding: .9rem 0;
+  }
+  header .inner { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+  .logo { font-weight: 700; font-size: 1.05rem; color: var(--ink-900); }
+  .logo span { color: var(--ink-500); font-weight: 400; }
+  .nav-links { display: flex; align-items: center; gap: 1.3rem; }
+  .nav-links a.plain { font-size: .85rem; font-weight: 600; text-decoration: none; color: var(--ink-700); }
+  .btn-cta {
+    display: inline-block; background: var(--ink-800); color: #fff; padding: .55rem .95rem;
+    border-radius: 7px; font-size: .85rem; font-weight: 600; text-decoration: none;
+  }
+  .btn-cta:hover { background: var(--ink-900); }
+
+  /* ---- Hero ---- */
+  .hero {
+    display: grid; grid-template-columns: 1fr; gap: 2.5rem; align-items: start;
+    padding: 2.5rem 0 1.5rem;
+  }
+  @media (min-width: 860px) { .hero { grid-template-columns: minmax(0,1fr) 400px; padding: 3.5rem 0 2rem; } }
+  .hero .eyebrow { font-size: .82rem; color: var(--ink-500); margin-bottom: .5rem; }
+  .hero h1 { font-size: 2.1rem; font-weight: 800; line-height: 1.15; margin: 0 0 1rem; color: var(--ink-900); }
+  .hero p.lead { font-size: .95rem; color: var(--ink-600); max-width: 420px; margin: 0 0 1.5rem; line-height: 1.6; }
+  .hero-ctas { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: 1.75rem; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: .4rem; background: var(--ink-800); color: #fff;
+    padding: .65rem 1.1rem; border-radius: 8px; font-weight: 600; font-size: .88rem; text-decoration: none;
+  }
+  .btn-primary:hover { background: var(--ink-900); }
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: .4rem; background: #fff; color: var(--ink-800);
+    border: 1px solid var(--ink-300); padding: .65rem 1.1rem; border-radius: 8px; font-weight: 600;
+    font-size: .88rem; text-decoration: none;
+  }
+  .btn-outline:hover { background: var(--ink-100); }
+  .trust-row { display: flex; align-items: center; gap: .6rem; margin-bottom: .6rem; }
+  .trust-dot {
+    width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    font-size: .68rem; color: #fff; background: var(--ink-800); flex: none;
+  }
+  .trust-row p { font-size: .82rem; color: var(--ink-600); margin: 0; }
+
+  /* ---- Hero code card ---- */
+  .code-card {
+    background: var(--ink-900); border-radius: 12px; padding: 1.1rem; color: #e7eaf0;
+    box-shadow: 0 8px 24px -8px rgba(33,38,47,.35);
+  }
+  .code-card .title { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+    color: #9aa7c0; margin-bottom: .6rem; }
+  .code-card pre { margin: 0; font-size: .74rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .code-card .k { color: #93c5fd; } .code-card .s { color: #86efac; } .code-card .c { color: #8b93a7; }
+
+  /* ---- Sections ---- */
+  section.pad { padding: 3rem 0; }
+  h2.section-title { font-size: 1.5rem; font-weight: 800; text-align: center; margin: 0 0 .6rem; color: var(--ink-900); }
+  p.section-sub { font-size: .88rem; color: var(--ink-600); text-align: center; max-width: 560px; margin: 0 auto 2rem; }
+
+  .reasons-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); }
+  .reason-card { background: #fff; border: 1px solid var(--ink-200); border-radius: 10px; padding: 1.2rem; }
+  .reason-icon {
+    width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--ink-800);
+    display: grid; place-items: center; font-size: 1rem; margin-bottom: .75rem;
+  }
+  .reason-card .t { font-weight: 700; font-size: .92rem; margin: 0 0 .35rem; color: var(--ink-900); }
+  .reason-card .b { font-size: .82rem; color: var(--ink-600); line-height: 1.55; margin: 0; }
+
+  .contact-banner {
+    background: var(--ink-100); border-radius: 12px; padding: 1.5rem 1.75rem; display: flex;
+    flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .contact-banner .t { font-size: 1.05rem; font-weight: 700; color: var(--ink-900); margin: 0 0 .3rem; }
+  .contact-banner .b { font-size: .82rem; color: var(--ink-600); margin: 0; max-width: 460px; }
+
+  .usecases { display: flex; flex-wrap: wrap; justify-content: center; gap: .65rem; }
+  .usecases span {
+    background: #fff; border: 1px solid var(--ink-200); border-radius: 8px; padding: .55rem 1rem;
+    font-size: .82rem; font-weight: 600; color: var(--ink-700);
+  }
+
+  footer { background: var(--ink-950); color: #9aa7c0; padding: 2.75rem 0 1.75rem; margin-top: 1rem; }
+  .footer-grid { display: grid; gap: 1.75rem; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); }
+  .footer-grid .brand { color: #fff; font-weight: 700; font-size: 1rem; margin-bottom: .5rem; }
+  .footer-grid p.desc { font-size: .78rem; max-width: 260px; line-height: 1.5; }
+  .footer-grid h4 { color: #fff; font-weight: 600; font-size: .82rem; margin: 0 0 .6rem; }
+  .footer-grid a, .footer-grid p.item { display: block; font-size: .78rem; color: #9aa7c0; text-decoration: none; margin-bottom: .4rem; }
+  .footer-grid a:hover { color: #fff; }
+  .copyright { text-align: center; font-size: .75rem; color: #6b7693; margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<div class="announce" id="announce">
+  <strong>Self-hosted SMS Gateway.</strong> Turn an Android phone into a programmable SMS/MMS API — no third-party relay in the loop.
+  <button class="dismiss" id="announce-dismiss" aria-label="Dismiss">&times;</button>
+</div>
+
+<header>
+  <div class="wrap inner">
+    <div class="logo">SMS <span>Gateway</span></div>
+    <div class="nav-links">
+      <a class="btn-cta" href="https://admin.territechnologies.com/" target="_blank" rel="noopener">Admin sign in &rarr;</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <div>
+    <p class="eyebrow">Self-hosted. End-to-end encrypted. Your phone, your data.</p>
+    <h1>Turn a phone into<br>an SMS API.</h1>
+    <p class="lead">
+      Send and receive SMS &amp; MMS programmatically through your own Android device — no shared
+      number pool, no third-party gateway reading your traffic, and a REST API your app can call
+      in minutes.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn-primary" href="https://admin.territechnologies.com/" target="_blank" rel="noopener">Open admin console &rarr;</a>
+      <a class="btn-outline" href="mailto:dev@alphamedia.co.zw">Request API access</a>
+    </div>
+    <div class="trust-row">
+      <span class="trust-dot">&#128274;</span>
+      <p>End-to-end encryption available — message content never has to leave your device unencrypted.</p>
+    </div>
+    <div class="trust-row">
+      <span class="trust-dot">&#10003;</span>
+      <p>Every outgoing message gets a trackable status — sent, delivered, or failed, with webhooks.</p>
+    </div>
+  </div>
+
+  <div class="code-card">
+    <div class="title">Send a message in one request</div>
+    <pre><span class="c"># one call, your own number</span>
+curl <span class="k">-H</span> <span class="s">"Authorization: Bearer &lt;token&gt;"</span> \
+  <span class="k">-X POST</span> https://sms.territechnologies.com/api/3rdparty/v1/message \
+  <span class="k">-d</span> <span class="s">'{"textMessage":{"text":"Hello"},</span>
+<span class="s">      "phoneNumbers":["+263..."]}'</span></pre>
+  </div>
+</div>
+
+<section class="pad">
+  <div class="wrap">
+    <h2 class="section-title">Why self-host your SMS?</h2>
+    <p class="section-sub">
+      A message is more than a transaction — it's a one-time code, a reminder, an alert. Here's
+      how this gateway is built around keeping that in your hands.
+    </p>
+    <div class="reasons-grid">
+      <div class="reason-card">
+        <div class="reason-icon">&#128241;</div>
+        <p class="t">Your own number</p>
+        <p class="b">Messages send through a real SIM card in a phone you control — not a shared pool shared with other customers.</p>
+      </div>
+      <div class="reason-card">
+        <div class="reason-icon">&#128274;</div>
+        <p class="t">End-to-end encryption</p>
+        <p class="b">Message content and recipient numbers can be encrypted on-device before they ever reach the server.</p>
+      </div>
+      <div class="reason-card">
+        <div class="reason-icon">&#9889;</div>
+        <p class="t">Live delivery</p>
+        <p class="b">A persistent connection to the device means messages go out immediately — no polling, no delay.</p>
+      </div>
+      <div class="reason-card">
+        <div class="reason-icon">&#128225;</div>
+        <p class="t">Webhooks, not polling</p>
+        <p class="b">Get a signed HTTP callback the moment a message is sent, delivered, or fails — build on events, not loops.</p>
+      </div>
+      <div class="reason-card">
+        <div class="reason-icon">&#128196;</div>
+        <p class="t">MMS included</p>
+        <p class="b">Images, audio, video and other attachments send the same way text does, through the same API.</p>
+      </div>
+      <div class="reason-card">
+        <div class="reason-icon">&#129309;</div>
+        <p class="t">You control the data</p>
+        <p class="b">Self-hosted means your message history, device list and credentials stay on infrastructure you run.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="wrap">
+    <div class="contact-banner">
+      <div>
+        <p class="t">Need API access?</p>
+        <p class="b">We issue scoped tokens to integrators instead of sharing admin credentials — tell us what you're building and we'll set you up.</p>
+      </div>
+      <a class="btn-primary" href="mailto:dev@alphamedia.co.zw">Get in touch &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<section class="pad">
+  <div class="wrap">
+    <h2 class="section-title" style="font-size:1.1rem">Built for</h2>
+    <div class="usecases">
+      <span>Two-factor authentication</span>
+      <span>Transactional alerts</span>
+      <span>Appointment reminders</span>
+      <span>Service notifications</span>
+      <span>Customer feedback (SMS)</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <div class="brand">SMS Gateway</div>
+      <p class="desc">A self-hosted SMS/MMS gateway — your own phone, your own API, end-to-end encryption available.</p>
+    </div>
+    <div>
+      <h4>Quick links</h4>
+      <a href="https://admin.territechnologies.com/" target="_blank" rel="noopener">Admin sign in</a>
+      <a href="/health" target="_blank" rel="noopener">Status</a>
+    </div>
+    <div>
+      <h4>Capabilities</h4>
+      <p class="item">SMS &amp; MMS sending</p>
+      <p class="item">Status webhooks</p>
+      <p class="item">Scoped integrator tokens</p>
+    </div>
+  </div>
+  <p class="copyright">&copy; <span id="year"></span> SMS Gateway. Self-hosted — no message content passes through any third-party service.</p>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  (function () {
+    try {
+      if (sessionStorage.getItem("smsgw.announcement-dismissed") === "1") {
+        document.getElementById("announce").style.display = "none";
+      }
+    } catch (e) {}
+  })();
+  document.getElementById("announce-dismiss").addEventListener("click", function () {
+    document.getElementById("announce").style.display = "none";
+    try { sessionStorage.setItem("smsgw.announcement-dismissed", "1"); } catch (e) {}
+  });
+</script>
+</body>
+</html>
