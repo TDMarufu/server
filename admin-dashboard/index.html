@@ -37,26 +37,61 @@
   button, input, select { font: inherit; }
   code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85em; }
 
-  /* ---- Login screen ---- */
-  #login-screen-wrap {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100vh; width: 100%; padding: 2rem 1rem;
+  /*
+   * Login screen - a direct port of recharge/frontend's LoginPage.tsx: a
+   * split screen (left: branded panel with a feature list, hidden below
+   * lg; right: centered form), including its blue-600 accent used only on
+   * this page (the rest of the console stays on the neutral ink palette,
+   * exactly as Recharge's own LoginPage does).
+   */
+  #login-screen-wrap { display: grid; grid-template-columns: 1fr; min-height: 100vh; }
+  @media (min-width: 1024px) { #login-screen-wrap { grid-template-columns: 2fr 3fr; } }
+  .login-panel {
+    display: none; flex-direction: column; padding: 2rem;
+    background: linear-gradient(135deg, #eff6ff, var(--ink-100));
   }
-  #login-screen-wrap .brand-header { text-align: center; margin-bottom: 1.25rem; }
-  #login-screen-wrap .brand-header .name { font-weight: 600; font-size: 1.05rem; color: var(--ink-900); }
-  #login-screen-wrap .brand-header .tag { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
-  #login-screen {
-    width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--ink-200);
-    border-radius: var(--radius); padding: 1.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,.05);
+  @media (min-width: 1024px) { .login-panel { display: flex; } }
+  .login-panel .brand { font-weight: 700; font-size: 1.3rem; color: var(--ink-900); letter-spacing: -.01em; }
+  .login-panel .brand .dot { color: #2563eb; }
+  .login-panel h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; color: var(--ink-900); margin: 1.5rem 0 1.75rem; }
+  .login-panel ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.1rem; }
+  .login-panel li { display: flex; gap: .7rem; align-items: flex-start; }
+  .login-panel li .bullet { width: 8px; height: 8px; border-radius: 50%; background: #2563eb; margin-top: .4rem; flex: none; }
+  .login-panel li .ft { font-weight: 600; color: var(--ink-900); font-size: .9rem; }
+  .login-panel li .fb { font-size: .82rem; color: var(--ink-600); margin-top: .1rem; }
+  .login-panel .tag {
+    margin-top: auto; padding-top: 2rem; font-size: .72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--ink-400);
   }
-  #login-screen h1 { font-size: 1.1rem; margin: 0 0 .3rem; color: var(--ink-900); font-weight: 600; }
-  .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .9rem; }
-  .field label { font-size: .72rem; color: var(--ink-500); font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
+  .login-form-side { display: flex; align-items: center; justify-content: center; background: #fff; padding: 1.5rem; }
+  #login-screen { width: 100%; max-width: 380px; }
+  #login-screen h2 { font-size: 1.4rem; font-weight: 700; color: var(--ink-900); margin: 0; }
+  #login-screen .sub { margin: .3rem 0 0; font-size: .85rem; color: var(--ink-500); }
+  .field { display: block; margin-top: 1.1rem; }
+  .field .flabel { font-size: .85rem; font-weight: 600; color: var(--ink-800); display: block; margin-bottom: .35rem; }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 3.5rem; }
+  .pw-toggle {
+    position: absolute; right: 0; top: 0; bottom: 0; padding: 0 .75rem; background: none; border: none;
+    color: var(--ink-500); font-size: .8rem; font-weight: 600; cursor: pointer;
+  }
+  .pw-toggle:hover { background: none; color: var(--ink-800); }
   input, select {
-    padding: .5rem .75rem; border: 1px solid var(--ink-300); border-radius: 6px;
-    background: var(--surface); color: var(--text); width: 100%;
+    padding: .6rem .75rem; border: 1px solid var(--ink-300); border-radius: 7px; height: 44px;
+    background: #fff; color: var(--text); width: 100%; font-size: .92rem;
   }
-  input:focus, select:focus { outline: none; border-color: var(--ink-500); box-shadow: 0 0 0 1px var(--ink-500); }
+  input:focus, select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+  #login-screen .btn-submit {
+    margin-top: 1.4rem; height: 44px; width: 100%; border-radius: 8px; background: #2563eb; color: #fff;
+    font-weight: 600; font-size: .9rem; border: none; cursor: pointer;
+  }
+  #login-screen .btn-submit:hover { background: #1d4ed8; }
+  #login-screen .btn-submit:disabled { opacity: .6; cursor: not-allowed; }
+  #login-screen .hint { margin-top: 1.1rem; text-align: center; font-size: .82rem; color: var(--ink-500); }
+  .login-error {
+    margin-top: 1.1rem; border: 1px solid #fecaca; background: #fef2f2; color: #991b1b;
+    border-radius: 6px; padding: .55rem .75rem; font-size: .85rem;
+  }
 
   /* ---- App shell ---- */
   #app { display: none; height: 100vh; }
@@ -155,18 +190,41 @@
 <body>
 
 <div id="login-screen-wrap">
-  <div class="brand-header">
-    <div class="name">SMS Gateway</div>
-    <div class="tag">Admin console</div>
+  <div class="login-panel">
+    <div class="brand">SMS Gateway<span class="dot">.</span></div>
+    <h1>Send and receive SMS straight from your own API.</h1>
+    <ul>
+      <li><span class="bullet"></span><div><div class="ft">Secure access</div><div class="fb">Per-account credentials and scoped Bearer tokens, never a shared platform login.</div></div></li>
+      <li><span class="bullet"></span><div><div class="ft">Self-hosted, end-to-end encrypted</div><div class="fb">Your own phone, your own server — no third-party relay ever sees message content.</div></div></li>
+      <li><span class="bullet"></span><div><div class="ft">Live delivery and webhooks</div><div class="fb">Watch devices, messages and subscription status as they happen.</div></div></li>
+    </ul>
+    <div class="tag">SMS Gateway</div>
   </div>
-  <div id="login-screen">
-    <h1>Sign in</h1>
-    <p class="muted">Log in with a device/user account's own credentials (shown on that phone's Home tab). This dashboard only ever sees what that account can already see via the API — nothing more.</p>
-    <div class="field"><label>Username</label><input id="login-user" autocomplete="username"></div>
-    <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password"></div>
-    <button id="login-btn" style="width:100%">Log in</button>
-    <div class="err-msg" id="login-err"></div>
-    <p class="muted" style="margin-top:1rem">Credentials are kept only in this tab's memory. Base URL: <code id="base-url-display"></code></p>
+
+  <div class="login-form-side">
+    <div id="login-screen">
+      <h2>Sign in</h2>
+      <p class="sub">Use the device/user account's own credentials (shown on that phone's Home tab).</p>
+
+      <div class="field">
+        <label class="flabel" for="login-user">Username</label>
+        <input id="login-user" autocomplete="username" autofocus>
+      </div>
+
+      <div class="field">
+        <label class="flabel" for="login-pass">Password</label>
+        <div class="pw-wrap">
+          <input id="login-pass" type="password" autocomplete="current-password">
+          <button type="button" class="pw-toggle" id="login-pw-toggle">Show</button>
+        </div>
+      </div>
+
+      <div class="login-error" id="login-err" style="display:none"></div>
+
+      <button class="btn-submit" id="login-btn">Log in</button>
+
+      <p class="hint">Credentials are kept only in this tab's memory. Base URL: <code id="base-url-display"></code></p>
+    </div>
   </div>
 </div>
 
@@ -612,13 +670,21 @@
   }
 
   // ---- Auth / shell ----
+  function showLoginError(msg) {
+    var errEl = document.getElementById("login-err");
+    if (!msg) { errEl.style.display = "none"; errEl.textContent = ""; return; }
+    errEl.textContent = msg;
+    errEl.style.display = "block";
+  }
+
   function doLogin() {
     var u = document.getElementById("login-user").value.trim();
     var p = document.getElementById("login-pass").value;
-    var errEl = document.getElementById("login-err");
-    errEl.textContent = "";
-    if (!u || !p) { errEl.textContent = "Enter a username and password."; return; }
+    var btn = document.getElementById("login-btn");
+    showLoginError(null);
+    if (!u || !p) { showLoginError("Enter a username and password."); return; }
     state.user = u; state.pass = p;
+    btn.disabled = true; btn.textContent = "Signing in…";
     api("/device").then(function () {
       document.getElementById("login-screen-wrap").style.display = "none";
       document.getElementById("app").style.display = "block";
@@ -633,8 +699,10 @@
       buildScopeChecks();
       buildWebhookEventChecks();
     }).catch(function (e) {
-      errEl.textContent = "Login failed: " + e.message;
+      showLoginError("Login failed: " + e.message);
       state.user = null; state.pass = null;
+    }).then(function () {
+      btn.disabled = false; btn.textContent = "Log in";
     });
   }
 
@@ -642,7 +710,7 @@
     state.user = null; state.pass = null;
     document.getElementById("login-pass").value = "";
     document.getElementById("app").style.display = "none";
-    document.getElementById("login-screen-wrap").style.display = "flex";
+    document.getElementById("login-screen-wrap").style.display = "grid";
   }
 
   document.querySelectorAll(".nav button[data-view]").forEach(function (btn) {
@@ -651,6 +719,12 @@
 
   document.getElementById("login-btn").addEventListener("click", doLogin);
   document.getElementById("login-pass").addEventListener("keydown", function (e) { if (e.key === "Enter") doLogin(); });
+  document.getElementById("login-pw-toggle").addEventListener("click", function () {
+    var input = document.getElementById("login-pass");
+    var show = input.type === "password";
+    input.type = show ? "text" : "password";
+    this.textContent = show ? "Hide" : "Show";
+  });
   document.getElementById("logout-btn").addEventListener("click", doLogout);
   document.getElementById("send-btn").addEventListener("click", doSend);
   document.getElementById("refresh-messages-btn").addEventListener("click", loadMessages);
