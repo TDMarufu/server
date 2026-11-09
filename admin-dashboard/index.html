@@ -38,8 +38,15 @@
   code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85em; }
 
   /* ---- Login screen ---- */
+  #login-screen-wrap {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; width: 100%; padding: 2rem 1rem;
+  }
+  #login-screen-wrap .brand-header { text-align: center; margin-bottom: 1.25rem; }
+  #login-screen-wrap .brand-header .name { font-weight: 600; font-size: 1.05rem; color: var(--ink-900); }
+  #login-screen-wrap .brand-header .tag { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
   #login-screen {
-    max-width: 380px; margin: 10vh auto; background: var(--surface); border: 1px solid var(--ink-200);
+    width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--ink-200);
     border-radius: var(--radius); padding: 1.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,.05);
   }
   #login-screen h1 { font-size: 1.1rem; margin: 0 0 .3rem; color: var(--ink-900); font-weight: 600; }
@@ -122,18 +129,45 @@
   .checks { display: flex; gap: .4rem; flex-wrap: wrap; }
   .checks label { flex-direction: row; align-items: center; gap: .3rem; font-size: .78rem; font-weight: 400;
     text-transform: none; color: var(--text); }
+
+  /* ---- Dashboard: stat tiles + banners (matches recharge/frontend's CompanyDashboardPage) ---- */
+  .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem; }
+  @media (min-width: 720px) { .stat-grid { grid-template-columns: repeat(4, 1fr); } }
+  .stat-tile { padding: 1rem; }
+  .stat-tile .label { font-size: .72rem; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-500); }
+  .stat-tile .value { margin-top: .3rem; font-size: 1.6rem; font-weight: 600; color: var(--ink-900); font-variant-numeric: tabular-nums; }
+  .stat-tile .sub { margin-top: .15rem; font-size: .72rem; color: var(--ink-500); }
+  .stat-tile .value.tone-ok { color: var(--ok); }
+  .stat-tile .value.tone-warn { color: var(--warn); }
+  .stat-tile .value.tone-err { color: var(--err); }
+  .banner {
+    border-radius: var(--radius); padding: .7rem 1rem; margin-bottom: 1rem; font-size: .85rem;
+    border: 1px solid transparent;
+  }
+  .banner.warn { background: var(--warn-weak); color: var(--warn); border-color: rgba(180,83,9,.25); }
+  .banner.danger { background: var(--err-weak); color: var(--err); border-color: rgba(185,28,28,.25); }
+  .card-actions { display: flex; align-items: center; justify-content: space-between; margin: -.2rem 0 .9rem; }
+  .card-actions h3 { margin: 0; }
+  .card-actions a { font-size: .82rem; color: var(--ink-600); text-decoration: none; }
+  .card-actions a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
 
-<div id="login-screen">
-  <h1>SMS Gateway</h1>
-  <p class="muted">Log in with a device/user account's own credentials (shown on that phone's Home tab). This dashboard only ever sees what that account can already see via the API — nothing more.</p>
-  <div class="field"><label>Username</label><input id="login-user" autocomplete="username"></div>
-  <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password"></div>
-  <button id="login-btn" style="width:100%">Log in</button>
-  <div class="err-msg" id="login-err"></div>
-  <p class="muted" style="margin-top:1rem">Credentials are kept only in this tab's memory. Base URL: <code id="base-url-display"></code></p>
+<div id="login-screen-wrap">
+  <div class="brand-header">
+    <div class="name">SMS Gateway</div>
+    <div class="tag">Admin console</div>
+  </div>
+  <div id="login-screen">
+    <h1>Sign in</h1>
+    <p class="muted">Log in with a device/user account's own credentials (shown on that phone's Home tab). This dashboard only ever sees what that account can already see via the API — nothing more.</p>
+    <div class="field"><label>Username</label><input id="login-user" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password"></div>
+    <button id="login-btn" style="width:100%">Log in</button>
+    <div class="err-msg" id="login-err"></div>
+    <p class="muted" style="margin-top:1rem">Credentials are kept only in this tab's memory. Base URL: <code id="base-url-display"></code></p>
+  </div>
 </div>
 
 <div id="app">
@@ -141,7 +175,8 @@
     <nav class="sidebar">
       <div class="brand">SMS Gateway<div class="tag">Admin console</div></div>
       <div class="nav">
-        <button data-view="subscription" class="active">Subscription</button>
+        <button data-view="dashboard" class="active">Dashboard</button>
+        <button data-view="subscription">Subscription</button>
         <button data-view="devices">Devices</button>
         <button data-view="messages">Messages</button>
         <button data-view="tokens">API Tokens</button>
@@ -154,13 +189,46 @@
 
     <div class="main-area">
       <div class="topbar">
-        <h2 id="view-title">Subscription</h2>
+        <h2 id="view-title">Dashboard</h2>
         <div class="who">Signed in as <span id="whoami"></span></div>
       </div>
 
       <div class="content">
 
-        <section class="view active" data-view="subscription">
+        <section class="view active" data-view="dashboard">
+          <div id="dashboard-banner"></div>
+          <div class="stat-grid">
+            <div class="card stat-tile">
+              <div class="label">Subscription</div>
+              <div class="value" id="stat-subscription">—</div>
+              <div class="sub" id="stat-subscription-sub"></div>
+            </div>
+            <div class="card stat-tile">
+              <div class="label">Devices</div>
+              <div class="value" id="stat-devices">—</div>
+            </div>
+            <div class="card stat-tile">
+              <div class="label">Active tokens</div>
+              <div class="value" id="stat-tokens">—</div>
+            </div>
+            <div class="card stat-tile">
+              <div class="label">Webhooks</div>
+              <div class="value" id="stat-webhooks">—</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-actions">
+              <h3>Recent messages</h3>
+              <a href="#" data-view-link="messages">View all →</a>
+            </div>
+            <table>
+              <thead><tr><th>Sent</th><th>To</th><th>State</th><th>Text</th></tr></thead>
+              <tbody id="dashboard-messages-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" data-view="subscription">
           <div class="card">
             <h3>Status</h3>
             <p id="subscription-status" class="muted">Loading…</p>
@@ -310,6 +378,67 @@
     });
     document.getElementById("view-title").textContent =
       document.querySelector(".nav button[data-view='" + name + "']").textContent.trim();
+  }
+
+  // ---- Dashboard ----
+  function loadDashboard() {
+    api("/billing/status").then(function (s) {
+      var statEl = document.getElementById("stat-subscription");
+      var subEl = document.getElementById("stat-subscription-sub");
+      var bannerEl = document.getElementById("dashboard-banner");
+      if (s.active) {
+        statEl.textContent = "Active";
+        statEl.className = "value tone-ok";
+        subEl.textContent = "renews " + fmtDate(s.currentPeriodEnd);
+        bannerEl.innerHTML = "";
+      } else {
+        statEl.textContent = "Inactive";
+        statEl.className = "value tone-err";
+        subEl.textContent = "sending is blocked";
+        bannerEl.innerHTML = "<div class='banner danger'><strong>Subscription inactive</strong> — " +
+          "messages:send will return 402 until you <a href='#' data-view-link='subscription' style='color:inherit;text-decoration:underline'>subscribe</a>.</div>";
+        bindViewLinks();
+      }
+    }).catch(function () {
+      document.getElementById("stat-subscription").textContent = "?";
+    });
+
+    api("/device").then(function (list) {
+      document.getElementById("stat-devices").textContent = String(list.length);
+    }).catch(function () { document.getElementById("stat-devices").textContent = "?"; });
+
+    api("/auth/token").then(function (list) {
+      document.getElementById("stat-tokens").textContent = String(list.length);
+    }).catch(function () { document.getElementById("stat-tokens").textContent = "?"; });
+
+    api("/status-webhooks").then(function (list) {
+      document.getElementById("stat-webhooks").textContent = String(list.length);
+    }).catch(function () { document.getElementById("stat-webhooks").textContent = "?"; });
+
+    api("/message").then(function (list) {
+      var tbody = document.getElementById("dashboard-messages-body");
+      if (!list.length) { tbody.innerHTML = '<tr><td colspan="4" class="muted">No messages yet.</td></tr>'; return; }
+      tbody.innerHTML = list.slice(0, 5).map(function (m) {
+        var sentAt = m.states && (m.states.Pending || Object.values(m.states)[0]);
+        var to = (m.recipients || []).map(function (r) { return esc(r.phoneNumber); }).join(", ");
+        var text = m.textMessage ? m.textMessage.text : (m.isHashed ? "(hashed, content not retained)" : "");
+        return "<tr><td>" + fmtDate(sentAt) + "</td><td>" + to + "</td>" +
+          "<td><span class='state " + esc(m.state) + "'>" + esc(m.state) + "</span></td>" +
+          "<td>" + esc(text) + "</td></tr>";
+      }).join("");
+    }).catch(function (e) {
+      document.getElementById("dashboard-messages-body").innerHTML =
+        '<tr><td colspan="4" class="err-msg">' + esc(e.message) + "</td></tr>";
+    });
+  }
+
+  function bindViewLinks() {
+    document.querySelectorAll("[data-view-link]").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        showView(a.getAttribute("data-view-link"));
+      });
+    });
   }
 
   // ---- Subscription ----
@@ -491,9 +620,11 @@
     if (!u || !p) { errEl.textContent = "Enter a username and password."; return; }
     state.user = u; state.pass = p;
     api("/device").then(function () {
-      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("login-screen-wrap").style.display = "none";
       document.getElementById("app").style.display = "block";
       document.getElementById("whoami").textContent = u;
+      loadDashboard();
+      bindViewLinks();
       loadSubscription();
       loadDevices();
       loadMessages();
@@ -511,7 +642,7 @@
     state.user = null; state.pass = null;
     document.getElementById("login-pass").value = "";
     document.getElementById("app").style.display = "none";
-    document.getElementById("login-screen").style.display = "block";
+    document.getElementById("login-screen-wrap").style.display = "flex";
   }
 
   document.querySelectorAll(".nav button[data-view]").forEach(function (btn) {
