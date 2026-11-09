@@ -6,129 +6,235 @@
 <title>SMS Gateway Admin</title>
 <style>
   :root {
-    --bg: #f5f6f8; --card: #fff; --text: #1a1d23; --muted: #6b7280;
-    --border: #e3e5e8; --accent: #2563eb; --ok: #16a34a; --warn: #d97706; --err: #dc2626;
+    --bg: #f8f9fb; --surface: #ffffff; --surface-2: #f1f3f6; --text: #0f172a; --muted: #64748b;
+    --border: #e4e7ec; --accent: #4f46e5; --accent-weak: rgba(79,70,229,.1);
+    --ok: #15803d; --ok-weak: rgba(21,128,61,.12);
+    --warn: #b45309; --warn-weak: rgba(180,83,9,.12);
+    --err: #b91c1c; --err-weak: rgba(185,28,28,.12);
+    --sidebar-w: 220px; --radius: 10px;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #15171c; --card: #1e2128; --text: #e6e8eb; --muted: #9aa1ab; --border: #2c303a; }
+    :root {
+      --bg: #0b0e14; --surface: #131722; --surface-2: #1a1f2b; --text: #e7eaf0; --muted: #8b93a7;
+      --border: #242a38; --accent: #818cf8; --accent-weak: rgba(129,140,248,.14);
+      --ok: #4ade80; --ok-weak: rgba(74,222,128,.14);
+      --warn: #fbbf24; --warn-weak: rgba(251,191,36,.14);
+      --err: #f87171; --err-weak: rgba(248,113,113,.14);
+    }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
-  header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
-  header h1 { font-size: 1.1rem; margin: 0; }
-  main { max-width: 960px; margin: 0 auto; padding: 1.25rem; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; margin-bottom: 1.1rem; }
-  .card h2 { font-size: .95rem; margin: 0 0 .9rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  th, td { text-align: left; padding: .5rem .4rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; }
-  tr:last-child td { border-bottom: none; }
-  .state { padding: .1rem .5rem; border-radius: 999px; font-size: .78rem; font-weight: 600; }
-  .state.Delivered, .state.Sent, .state.Processed { background: rgba(22,163,74,.12); color: var(--ok); }
-  .state.Pending { background: rgba(217,119,6,.12); color: var(--warn); }
-  .state.Failed { background: rgba(220,38,38,.12); color: var(--err); }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); font-size: 14px;
+  }
   button, input, select { font: inherit; }
-  input, select { padding: .5rem .6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); }
-  button { padding: .5rem .9rem; border: none; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; font-weight: 600; }
-  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85em; }
+
+  /* ---- Login screen ---- */
+  #login-screen {
+    max-width: 380px; margin: 10vh auto; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.75rem; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  #login-screen h1 { font-size: 1.15rem; margin: 0 0 .3rem; }
+  .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .9rem; }
+  .field label { font-size: .78rem; color: var(--muted); font-weight: 600; }
+  input, select {
+    padding: .55rem .7rem; border: 1px solid var(--border); border-radius: 7px;
+    background: var(--surface); color: var(--text); width: 100%;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent-weak); border-color: var(--accent); }
+
+  /* ---- App shell ---- */
+  #app { display: none; height: 100vh; }
+  .shell { display: flex; height: 100%; }
+
+  .sidebar {
+    width: var(--sidebar-w); flex: 0 0 var(--sidebar-w); background: var(--surface);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  }
+  .sidebar .brand { padding: 1.1rem 1.1rem .9rem; font-weight: 700; font-size: 1rem; letter-spacing: -.01em; }
+  .sidebar .brand span { color: var(--accent); }
+  .nav { display: flex; flex-direction: column; gap: .15rem; padding: .4rem; flex: 1; }
+  .nav button {
+    display: flex; align-items: center; gap: .6rem; text-align: left; background: transparent; border: none;
+    color: var(--muted); padding: .55rem .7rem; border-radius: 7px; font-weight: 500; cursor: pointer; font-size: .88rem;
+  }
+  .nav button:hover { background: var(--surface-2); color: var(--text); }
+  .nav button.active { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
+  .nav .icon { width: 1.1em; text-align: center; opacity: .9; }
+  .sidebar .footer { padding: .8rem; border-top: 1px solid var(--border); }
+
+  .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  .topbar {
+    height: 56px; flex: 0 0 56px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.4rem; border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .topbar h2 { font-size: .95rem; margin: 0; }
+  .topbar .who { font-size: .8rem; color: var(--muted); }
+  .content { flex: 1; overflow-y: auto; padding: 1.4rem; }
+  .view { display: none; max-width: 980px; }
+  .view.active { display: block; }
+
+  /* ---- Cards / tables / buttons (kept close to before, restyled) ---- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.2rem; margin-bottom: 1.1rem; box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  }
+  .card h3 { font-size: .92rem; margin: 0 0 .9rem; font-weight: 600; }
+  .card .desc { color: var(--muted); font-size: .85rem; margin: -.3rem 0 .9rem; }
+  table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+  th, td { text-align: left; padding: .55rem .4rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
+  tr:last-child td { border-bottom: none; }
+  .pill { padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; display: inline-block; }
+  .pill.ok, .state.Delivered, .state.Sent, .state.Processed { background: var(--ok-weak); color: var(--ok); }
+  .pill.warn, .state.Pending { background: var(--warn-weak); color: var(--warn); }
+  .pill.err, .state.Failed { background: var(--err-weak); color: var(--err); }
+  .state { padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  button {
+    padding: .5rem .9rem; border: none; border-radius: 7px; background: var(--accent); color: #fff;
+    cursor: pointer; font-weight: 600; font-size: .85rem;
+  }
+  button.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
   button.danger { background: var(--err); }
   button:disabled { opacity: .5; cursor: not-allowed; }
   .row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: end; margin-bottom: .8rem; }
-  .row label { display: flex; flex-direction: column; gap: .25rem; font-size: .8rem; color: var(--muted); }
-  #login-screen { max-width: 380px; margin: 4rem auto; }
+  .row label { display: flex; flex-direction: column; gap: .25rem; font-size: .78rem; color: var(--muted); font-weight: 600; }
   .muted { color: var(--muted); font-size: .85rem; }
-  .token-box { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: .7rem; font-family: monospace; font-size: .78rem; word-break: break-all; margin-top: .6rem; }
+  .token-box {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: .8rem;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .78rem; word-break: break-all; margin-top: .6rem;
+  }
   .err-msg { color: var(--err); font-size: .85rem; margin-top: .4rem; }
-  .pill { display: inline-block; padding: .1rem .5rem; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); font-size: .75rem; }
-  #app { display: none; }
   .checks { display: flex; gap: .4rem; flex-wrap: wrap; }
-  .checks label { flex-direction: row; align-items: center; gap: .3rem; font-size: .8rem; }
+  .checks label { flex-direction: row; align-items: center; gap: .3rem; font-size: .78rem; font-weight: 500; }
 </style>
 </head>
 <body>
 
-<div id="login-screen" class="card">
-  <h2 style="margin-bottom:.4rem">SMS Gateway Admin</h2>
+<div id="login-screen">
+  <h1>SMS Gateway</h1>
   <p class="muted">Log in with a device/user account's own credentials (shown on that phone's Home tab). This dashboard only ever sees what that account can already see via the API — nothing more.</p>
-  <div class="row" style="flex-direction:column; align-items:stretch">
-    <label>Username <input id="login-user" autocomplete="username"></label>
-    <label>Password <input id="login-pass" type="password" autocomplete="current-password"></label>
-  </div>
+  <div class="field"><label>Username</label><input id="login-user" autocomplete="username"></div>
+  <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password"></div>
   <button id="login-btn" style="width:100%">Log in</button>
   <div class="err-msg" id="login-err"></div>
-  <p class="muted" style="margin-top:1rem">This stores credentials only in this browser tab's memory (never persisted). Base URL: <code id="base-url-display"></code></p>
+  <p class="muted" style="margin-top:1rem">Credentials are kept only in this tab's memory. Base URL: <code id="base-url-display"></code></p>
 </div>
 
 <div id="app">
-<header>
-  <h1>SMS Gateway Admin — <span id="whoami"></span></h1>
-  <button class="secondary" id="logout-btn">Log out</button>
-</header>
-<main>
+  <div class="shell">
+    <nav class="sidebar">
+      <div class="brand">SMS<span>Gateway</span></div>
+      <div class="nav">
+        <button data-view="subscription" class="active"><span class="icon">&#9679;</span> Subscription</button>
+        <button data-view="devices"><span class="icon">&#9632;</span> Devices</button>
+        <button data-view="messages"><span class="icon">&#9993;</span> Messages</button>
+        <button data-view="tokens"><span class="icon">&#9873;</span> API Tokens</button>
+        <button data-view="webhooks"><span class="icon">&#9889;</span> Webhooks</button>
+      </div>
+      <div class="footer">
+        <button class="secondary" id="logout-btn" style="width:100%">Log out</button>
+      </div>
+    </nav>
 
-  <div class="card">
-    <h2>Subscription</h2>
-    <p id="subscription-status" class="muted">Loading…</p>
-    <div class="row">
-      <button id="subscribe-btn">Subscribe / Renew ($25/month)</button>
-      <button class="secondary" id="refresh-subscription-btn">Refresh status</button>
+    <div class="main-area">
+      <div class="topbar">
+        <h2 id="view-title">Subscription</h2>
+        <div class="who">Signed in as <span id="whoami"></span></div>
+      </div>
+
+      <div class="content">
+
+        <section class="view active" data-view="subscription">
+          <div class="card">
+            <h3>Status</h3>
+            <p id="subscription-status" class="muted">Loading…</p>
+            <div class="row">
+              <button id="subscribe-btn">Subscribe / Renew ($25/month)</button>
+              <button class="secondary" id="refresh-subscription-btn">Refresh status</button>
+            </div>
+            <div id="subscription-result" class="muted"></div>
+          </div>
+        </section>
+
+        <section class="view" data-view="devices">
+          <div class="card">
+            <h3>Registered devices</h3>
+            <table>
+              <thead><tr><th>Device</th><th>SIM</th><th>Last seen</th><th>Created</th></tr></thead>
+              <tbody id="devices-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" data-view="messages">
+          <div class="card">
+            <h3>Send a test message</h3>
+            <div class="row">
+              <label>Phone number <input id="send-number" placeholder="+263..."></label>
+              <label>Message <input id="send-text" placeholder="Hello" style="width:260px"></label>
+              <button id="send-btn">Send</button>
+            </div>
+            <div id="send-result" class="muted"></div>
+          </div>
+          <div class="card">
+            <h3>Recent messages</h3>
+            <div class="row"><button class="secondary" id="refresh-messages-btn">Refresh</button></div>
+            <table>
+              <thead><tr><th>Sent</th><th>To</th><th>State</th><th>Text</th></tr></thead>
+              <tbody id="messages-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" data-view="tokens">
+          <div class="card">
+            <h3>Issue an integrator token</h3>
+            <p class="desc">Creates a scoped Bearer token to hand to an external caller instead of sharing this account's password. See <code>docs/EXTERNAL-INTEGRATORS.md</code> for what to send them along with it.</p>
+            <div class="row checks" id="scope-checks"></div>
+            <div class="row">
+              <label>Valid for (days) <input id="token-days" type="number" value="90" style="width:80px"></label>
+              <button id="issue-token-btn">Issue token</button>
+            </div>
+            <div id="token-result"></div>
+            <p class="muted" style="margin-top:.6rem">⚠️ The raw token is shown once, here, in this session only — copy it immediately, or re-issue a new one if lost (the old one still works until it expires or is revoked).</p>
+          </div>
+          <div class="card">
+            <h3>Issued tokens</h3>
+            <div class="row"><button class="secondary" id="refresh-tokens-btn">Refresh</button></div>
+            <table>
+              <thead><tr><th>ID (jti)</th><th>Scopes</th><th>Created</th><th>Expires</th><th></th></tr></thead>
+              <tbody id="tokens-body"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" data-view="webhooks">
+          <div class="card">
+            <h3>Register a status webhook</h3>
+            <p class="desc">Get a signed HTTP POST when a message's status changes, instead of polling. See <code>docs/EXTERNAL-INTEGRATORS.md</code> for the signature format.</p>
+            <div class="row">
+              <label>URL (https only) <input id="webhook-url" placeholder="https://your-app.example.com/sms-status" style="width:320px"></label>
+            </div>
+            <div class="row checks" id="webhook-event-checks"></div>
+            <div class="row"><button id="register-webhook-btn">Register</button></div>
+            <div id="webhook-result"></div>
+          </div>
+          <div class="card">
+            <h3>Registered webhooks</h3>
+            <div class="row"><button class="secondary" id="refresh-webhooks-btn">Refresh</button></div>
+            <table>
+              <thead><tr><th>ID</th><th>URL</th><th>Events</th><th>Status</th><th></th></tr></thead>
+              <tbody id="webhooks-body"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
     </div>
-    <div id="subscription-result" class="muted"></div>
   </div>
-
-  <div class="card">
-    <h2>Devices</h2>
-    <table>
-      <thead><tr><th>Device</th><th>SIM</th><th>Last seen</th><th>Created</th></tr></thead>
-      <tbody id="devices-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
-    </table>
-  </div>
-
-  <div class="card">
-    <h2>Send a test message</h2>
-    <div class="row">
-      <label>Phone number <input id="send-number" placeholder="+263..."></label>
-      <label>Message <input id="send-text" placeholder="Hello" style="width:260px"></label>
-      <button id="send-btn">Send</button>
-    </div>
-    <div id="send-result" class="muted"></div>
-  </div>
-
-  <div class="card">
-    <h2>Recent Messages</h2>
-    <div class="row">
-      <button class="secondary" id="refresh-messages-btn">Refresh</button>
-    </div>
-    <table>
-      <thead><tr><th>Sent</th><th>To</th><th>State</th><th>Text</th></tr></thead>
-      <tbody id="messages-body"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
-    </table>
-  </div>
-
-  <div class="card">
-    <h2>Issue an Integrator Token</h2>
-    <p class="muted">Creates a scoped Bearer token to hand to an external caller instead of sharing this account's password. See <code>docs/EXTERNAL-INTEGRATORS.md</code> for what to send them along with it.</p>
-    <div class="row checks" id="scope-checks"></div>
-    <div class="row">
-      <label>Valid for (days) <input id="token-days" type="number" value="90" style="width:80px"></label>
-      <button id="issue-token-btn">Issue token</button>
-    </div>
-    <div id="token-result"></div>
-    <p class="muted" style="margin-top:.6rem">⚠️ The raw token is shown once, here, in this session only — copy it immediately, or re-issue a new one if lost (the old one still works until it expires or is revoked). You can still see and revoke it below by its ID without the raw value.</p>
-  </div>
-
-  <div class="card">
-    <h2>Issued Tokens</h2>
-    <div class="row">
-      <button class="secondary" id="refresh-tokens-btn">Refresh</button>
-    </div>
-    <table>
-      <thead><tr><th>ID (jti)</th><th>Scopes</th><th>Created</th><th>Expires</th><th></th></tr></thead>
-      <tbody id="tokens-body"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
-    </table>
-  </div>
-
-</main>
 </div>
 
 <script>
@@ -153,8 +259,11 @@
     "inbox:list", "inbox:read", "inbox:refresh",
     "logs:read",
     "settings:read", "settings:write",
-    "webhooks:list", "webhooks:write", "webhooks:delete"
+    "webhooks:list", "webhooks:write", "webhooks:delete",
+    "status-webhooks:list", "status-webhooks:write", "status-webhooks:delete"
   ];
+
+  var WEBHOOK_EVENTS = ["message.sent", "message.delivered", "message.failed", "message.cancelled"];
 
   function api(path, opts) {
     opts = opts || {};
@@ -178,14 +287,27 @@
   function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
   function fmtDate(s) { if (!s) return ""; try { return new Date(s).toLocaleString(); } catch (e) { return s; } }
 
+  // ---- Navigation ----
+  function showView(name) {
+    document.querySelectorAll(".nav button").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-view") === name);
+    });
+    document.querySelectorAll(".view").forEach(function (v) {
+      v.classList.toggle("active", v.getAttribute("data-view") === name);
+    });
+    document.getElementById("view-title").textContent =
+      document.querySelector(".nav button[data-view='" + name + "']").textContent.trim();
+  }
+
+  // ---- Subscription ----
   function loadSubscription() {
     var statusEl = document.getElementById("subscription-status");
     statusEl.textContent = "Loading…";
     api("/billing/status").then(function (s) {
       if (s.active) {
-        statusEl.innerHTML = "<span class='state Sent'>Active</span> — renews/expires " + fmtDate(s.currentPeriodEnd);
+        statusEl.innerHTML = "<span class='pill ok'>Active</span> — renews/expires " + fmtDate(s.currentPeriodEnd);
       } else {
-        statusEl.innerHTML = "<span class='state Failed'>Not active</span> — sending messages will be blocked until you subscribe.";
+        statusEl.innerHTML = "<span class='pill err'>Not active</span> — sending messages will be blocked until you subscribe.";
       }
     }).catch(function (e) { statusEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
   }
@@ -199,6 +321,7 @@
     }).catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
   }
 
+  // ---- Devices ----
   function loadDevices() {
     var tbody = document.getElementById("devices-body");
     api("/device").then(function (list) {
@@ -213,6 +336,7 @@
     }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="4" class="err-msg">' + esc(e.message) + "</td></tr>"; });
   }
 
+  // ---- Messages ----
   function loadMessages() {
     var tbody = document.getElementById("messages-body");
     api("/message").then(function (list) {
@@ -228,6 +352,21 @@
     }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="4" class="err-msg">' + esc(e.message) + "</td></tr>"; });
   }
 
+  function doSend() {
+    var number = document.getElementById("send-number").value.trim();
+    var text = document.getElementById("send-text").value.trim();
+    var resultEl = document.getElementById("send-result");
+    if (!number || !text) { resultEl.textContent = "Enter a phone number and message text."; return; }
+    resultEl.textContent = "Sending…";
+    api("/message", { method: "POST", body: { message: text, phoneNumbers: [number] } })
+      .then(function (r) {
+        resultEl.innerHTML = "Sent — id <code>" + esc(r.id) + "</code>, state <span class='state " + esc(r.state) + "'>" + esc(r.state) + "</span>";
+        loadMessages();
+      })
+      .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
+  }
+
+  // ---- Tokens ----
   function loadTokens() {
     var tbody = document.getElementById("tokens-body");
     tbody.innerHTML = '<tr><td colspan="5" class="muted">Loading…</td></tr>';
@@ -261,49 +400,6 @@
     }).join("");
   }
 
-  function doLogin() {
-    var u = document.getElementById("login-user").value.trim();
-    var p = document.getElementById("login-pass").value;
-    var errEl = document.getElementById("login-err");
-    errEl.textContent = "";
-    if (!u || !p) { errEl.textContent = "Enter a username and password."; return; }
-    state.user = u; state.pass = p;
-    api("/device").then(function () {
-      document.getElementById("login-screen").style.display = "none";
-      document.getElementById("app").style.display = "block";
-      document.getElementById("whoami").textContent = u;
-      loadSubscription();
-      loadDevices();
-      loadMessages();
-      loadTokens();
-      buildScopeChecks();
-    }).catch(function (e) {
-      errEl.textContent = "Login failed: " + e.message;
-      state.user = null; state.pass = null;
-    });
-  }
-
-  function doLogout() {
-    state.user = null; state.pass = null;
-    document.getElementById("login-pass").value = "";
-    document.getElementById("app").style.display = "none";
-    document.getElementById("login-screen").style.display = "block";
-  }
-
-  function doSend() {
-    var number = document.getElementById("send-number").value.trim();
-    var text = document.getElementById("send-text").value.trim();
-    var resultEl = document.getElementById("send-result");
-    if (!number || !text) { resultEl.textContent = "Enter a phone number and message text."; return; }
-    resultEl.textContent = "Sending…";
-    api("/message", { method: "POST", body: { message: text, phoneNumbers: [number] } })
-      .then(function (r) {
-        resultEl.innerHTML = "Sent — id <code>" + esc(r.id) + "</code>, state <span class='state " + esc(r.state) + "'>" + esc(r.state) + "</span>";
-        loadMessages();
-      })
-      .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
-  }
-
   function doIssueToken() {
     var days = parseInt(document.getElementById("token-days").value, 10) || 90;
     var scopes = Array.prototype.slice.call(document.querySelectorAll("#scope-checks input:checked")).map(function (c) { return c.value; });
@@ -323,6 +419,92 @@
       .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
   }
 
+  // ---- Status webhooks ----
+  function buildWebhookEventChecks() {
+    var el = document.getElementById("webhook-event-checks");
+    el.innerHTML = WEBHOOK_EVENTS.map(function (ev) {
+      var checked = (ev === "message.sent" || ev === "message.delivered" || ev === "message.failed") ? "checked" : "";
+      return '<label><input type="checkbox" value="' + ev + '" ' + checked + '> ' + ev + "</label>";
+    }).join("");
+  }
+
+  function loadWebhooks() {
+    var tbody = document.getElementById("webhooks-body");
+    tbody.innerHTML = '<tr><td colspan="5" class="muted">Loading…</td></tr>';
+    api("/status-webhooks").then(function (list) {
+      if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="muted">No webhooks registered.</td></tr>'; return; }
+      tbody.innerHTML = list.map(function (w) {
+        return "<tr><td><code>" + esc(w.id) + "</code></td>" +
+          "<td>" + esc(w.url) + "</td>" +
+          "<td>" + esc((w.events || []).join(", ")) + "</td>" +
+          "<td>" + (w.disabled ? "<span class='pill err'>Disabled</span>" : "<span class='pill ok'>Active</span>") + "</td>" +
+          "<td><button class='danger' data-id='" + esc(w.id) + "'>Delete</button></td></tr>";
+      }).join("");
+      Array.prototype.slice.call(tbody.querySelectorAll("button[data-id]")).forEach(function (btn) {
+        btn.addEventListener("click", function () { doDeleteWebhook(btn.getAttribute("data-id")); });
+      });
+    }).catch(function (e) { tbody.innerHTML = '<tr><td colspan="5" class="err-msg">' + esc(e.message) + "</td></tr>"; });
+  }
+
+  function doRegisterWebhook() {
+    var url = document.getElementById("webhook-url").value.trim();
+    var events = Array.prototype.slice.call(document.querySelectorAll("#webhook-event-checks input:checked")).map(function (c) { return c.value; });
+    var resultEl = document.getElementById("webhook-result");
+    if (!url) { resultEl.innerHTML = "<span class='err-msg'>Enter a URL.</span>"; return; }
+    if (!events.length) { resultEl.innerHTML = "<span class='err-msg'>Select at least one event.</span>"; return; }
+    resultEl.innerHTML = "<span class='muted'>Registering…</span>";
+    api("/status-webhooks", { method: "POST", body: { url: url, events: events } })
+      .then(function (r) {
+        resultEl.innerHTML = "<div class='token-box'><b>Secret:</b> " + esc(r.secret) + "</div>" +
+          "<p class='muted'>Copy this now — it's only shown here, used to verify the X-Signature-256 header on deliveries.</p>";
+        loadWebhooks();
+      })
+      .catch(function (e) { resultEl.innerHTML = "<span class='err-msg'>" + esc(e.message) + "</span>"; });
+  }
+
+  function doDeleteWebhook(id) {
+    if (!confirm("Delete webhook " + id + "?")) return;
+    api("/status-webhooks/" + encodeURIComponent(id), { method: "DELETE" })
+      .then(function () { loadWebhooks(); })
+      .catch(function (e) { alert("Delete failed: " + e.message); });
+  }
+
+  // ---- Auth / shell ----
+  function doLogin() {
+    var u = document.getElementById("login-user").value.trim();
+    var p = document.getElementById("login-pass").value;
+    var errEl = document.getElementById("login-err");
+    errEl.textContent = "";
+    if (!u || !p) { errEl.textContent = "Enter a username and password."; return; }
+    state.user = u; state.pass = p;
+    api("/device").then(function () {
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("whoami").textContent = u;
+      loadSubscription();
+      loadDevices();
+      loadMessages();
+      loadTokens();
+      loadWebhooks();
+      buildScopeChecks();
+      buildWebhookEventChecks();
+    }).catch(function (e) {
+      errEl.textContent = "Login failed: " + e.message;
+      state.user = null; state.pass = null;
+    });
+  }
+
+  function doLogout() {
+    state.user = null; state.pass = null;
+    document.getElementById("login-pass").value = "";
+    document.getElementById("app").style.display = "none";
+    document.getElementById("login-screen").style.display = "block";
+  }
+
+  document.querySelectorAll(".nav button[data-view]").forEach(function (btn) {
+    btn.addEventListener("click", function () { showView(btn.getAttribute("data-view")); });
+  });
+
   document.getElementById("login-btn").addEventListener("click", doLogin);
   document.getElementById("login-pass").addEventListener("keydown", function (e) { if (e.key === "Enter") doLogin(); });
   document.getElementById("logout-btn").addEventListener("click", doLogout);
@@ -332,6 +514,8 @@
   document.getElementById("refresh-tokens-btn").addEventListener("click", loadTokens);
   document.getElementById("subscribe-btn").addEventListener("click", doSubscribe);
   document.getElementById("refresh-subscription-btn").addEventListener("click", loadSubscription);
+  document.getElementById("register-webhook-btn").addEventListener("click", doRegisterWebhook);
+  document.getElementById("refresh-webhooks-btn").addEventListener("click", loadWebhooks);
 })();
 </script>
 </body>
