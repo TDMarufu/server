@@ -61,6 +61,13 @@ A daily worker task (`billing:expire-visibility`) logs subscriptions that
 expired in the last 24h, for ops awareness. It does not gate anything itself -
 see step 6 above.
 
+## Admin dashboard
+
+The **Subscription** card on `https://admin.territechnologies.com` (and the
+same-origin `/admin` copy baked into the server image, when it's current) does
+this without curl: shows active/expiry, a **Subscribe / Renew** button that
+opens the Pesepay checkout, and a **Refresh status** button.
+
 ## Endpoints
 
 | Method | Path | Auth | Purpose |

@@ -13,9 +13,35 @@ How to verify the whole system (Android app, server, admin dashboard) is actuall
 
 - Go to `https://admin.territechnologies.com`
 - Log in with the device username/password from step 1 (or any existing device's credentials)
-- Should show: Devices, Send a test message, Recent Messages, Issue an Integrator Token, and **Issued Tokens** (list + revoke)
+- Should show: **Subscription**, Devices, Send a test message, Recent Messages, Issue an Integrator Token, and **Issued Tokens** (list + revoke)
 
-## 3. Issue a scoped token (for API testing without the dashboard)
+## 3. Subscription / billing
+
+Before any real traffic will send, the account needs an active $25/month subscription (`docs/BILLING.md`).
+
+- In the dashboard's **Subscription** card, status should show "Not active" for a fresh account.
+- Click **Subscribe / Renew** — opens a Pesepay sandbox checkout in a new tab. Complete a test payment there.
+- Click **Refresh status** — should flip to "Active" with a renewal date, once Pesepay's callback has landed and been independently re-verified (not just trusted from the callback body).
+- Confirm sending is blocked beforehand and works after:
+  ```sh
+  curl -s -o /dev/null -w "%{http_code}\n" -u "<device-username>:<device-password>" \
+    -X POST https://sms.territechnologies.com/api/3rdparty/v1/message \
+    -H "Content-Type: application/json" \
+    -d '{"textMessage":{"text":"test"},"phoneNumbers":["+263XXXXXXXXX"]}'
+  ```
+  `402` before paying, `202` after.
+- Same via curl instead of the dashboard:
+  ```sh
+  curl -s -u "<device-username>:<device-password>" \
+    -X POST https://sms.territechnologies.com/api/3rdparty/v1/billing/subscribe
+  ```
+  returns `{"redirectUrl": "..."}` — open it to pay. Then:
+  ```sh
+  curl -s -u "<device-username>:<device-password>" \
+    https://sms.territechnologies.com/api/3rdparty/v1/billing/status
+  ```
+
+## 4. Issue a scoped token (for API testing without the dashboard)
 
 ```sh
 curl -s -u "<device-username>:<device-password>" \
@@ -26,7 +52,7 @@ curl -s -u "<device-username>:<device-password>" \
 
 Save the `access_token` from the response.
 
-## 4. Verify the token-list endpoint
+## 5. Verify the token-list endpoint
 
 ```sh
 curl -s -H "Authorization: Bearer <access_token>" \
@@ -35,7 +61,7 @@ curl -s -H "Authorization: Bearer <access_token>" \
 
 Should list the token just issued (scopes, created, expires) — never the raw token string again.
 
-## 5. Status webhooks
+## 6. Status webhooks
 
 Register one against a public test endpoint (e.g. `https://<slug>.requestcatcher.com/test` — no setup needed, view logged requests by opening that same URL in a browser):
 
@@ -68,7 +94,7 @@ curl -s -H "Authorization: Bearer <access_token>" -X DELETE \
   https://sms.territechnologies.com/api/3rdparty/v1/status-webhooks/<id>
 ```
 
-## 6. MMS via the external-integrator API
+## 7. MMS via the external-integrator API
 
 ```sh
 curl -s -H "Authorization: Bearer <access_token>" \
@@ -77,7 +103,7 @@ curl -s -H "Authorization: Bearer <access_token>" \
   -d '{"mmsMessage":{"subject":"Hello","attachments":[{"contentType":"image/jpeg","data":"<base64>"}]},"phoneNumbers":["+263XXXXXXXXX"]}'
 ```
 
-## 7. Health check (no auth)
+## 8. Health check (no auth)
 
 ```sh
 curl -s https://sms.territechnologies.com/health
@@ -85,7 +111,7 @@ curl -s https://sms.territechnologies.com/health
 
 Expect `{"status":"pass","version":"<current>",...}` with `checks.db:ping.status: "pass"`.
 
-## 8. Revoke and confirm it's dead
+## 9. Revoke and confirm it's dead
 
 ```sh
 curl -s -u "<device-username>:<device-password>" -X DELETE \

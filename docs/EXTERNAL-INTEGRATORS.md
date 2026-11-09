@@ -27,7 +27,24 @@ started, you'll get:
 ```json
 {"message": "subscription required - POST /3rdparty/v1/billing/subscribe to pay"}
 ```
-with HTTP status `402 Payment Required`. See `docs/BILLING.md` for how to pay.
+with HTTP status `402 Payment Required`.
+
+Your token (whatever scopes it has) can pay for this itself - no extra scope
+needed:
+
+```bash
+curl -s -H "Authorization: Bearer <your-token>" \
+  -X POST https://sms.territechnologies.com/api/3rdparty/v1/billing/subscribe
+```
+Response gives you a `redirectUrl` - open it to pay with Pesepay. Check whether
+it went through with:
+```bash
+curl -s -H "Authorization: Bearer <your-token>" \
+  https://sms.territechnologies.com/api/3rdparty/v1/billing/status
+```
+`active` flips to `true` once the payment clears - we independently re-verify
+every payment with Pesepay, so this can take a few seconds after you pay. See
+`docs/BILLING.md` for the full flow.
 
 ## Using the token
 
