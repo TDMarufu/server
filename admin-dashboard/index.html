@@ -4,46 +4,52 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SMS Gateway Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /*
+   * Matches the "ink" design system used by the Recharge admin console
+   * (frontend/tailwind.config.js + src/index.css): the ink-* blue-gray
+   * scale, Inter, rounded-lg/shadow-sm cards, and the same btn-primary/
+   * btn-secondary/btn-danger conventions, reimplemented as plain CSS
+   * since this page ships as a single static file with no build step.
+   */
   :root {
-    --bg: #f8f9fb; --surface: #ffffff; --surface-2: #f1f3f6; --text: #0f172a; --muted: #64748b;
-    --border: #e4e7ec; --accent: #4f46e5; --accent-weak: rgba(79,70,229,.1);
+    --ink-50: #f6f7f9; --ink-100: #eceef2; --ink-200: #d5dae2; --ink-300: #b0bac9;
+    --ink-400: #8494ab; --ink-500: #647691; --ink-600: #4f5e78; --ink-700: #414d62;
+    --ink-800: #384253; --ink-900: #323a47; --ink-950: #21262f;
+
+    --bg: var(--ink-50); --surface: #ffffff; --surface-2: var(--ink-100);
+    --text: var(--ink-900); --muted: var(--ink-500); --border: var(--ink-200);
+    --accent: var(--ink-800); --accent-hover: var(--ink-900); --accent-weak: var(--ink-100);
     --ok: #15803d; --ok-weak: rgba(21,128,61,.12);
     --warn: #b45309; --warn-weak: rgba(180,83,9,.12);
-    --err: #b91c1c; --err-weak: rgba(185,28,28,.12);
-    --sidebar-w: 220px; --radius: 10px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0b0e14; --surface: #131722; --surface-2: #1a1f2b; --text: #e7eaf0; --muted: #8b93a7;
-      --border: #242a38; --accent: #818cf8; --accent-weak: rgba(129,140,248,.14);
-      --ok: #4ade80; --ok-weak: rgba(74,222,128,.14);
-      --warn: #fbbf24; --warn-weak: rgba(251,191,36,.14);
-      --err: #f87171; --err-weak: rgba(248,113,113,.14);
-    }
+    --err: #b91c1c; --err-hover: #991b1b; --err-weak: rgba(185,28,28,.12);
+    --sidebar-w: 208px; --radius: 8px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg); color: var(--text); font-size: 14px;
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); font-size: 14px; -webkit-font-smoothing: antialiased;
   }
   button, input, select { font: inherit; }
   code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .85em; }
 
   /* ---- Login screen ---- */
   #login-screen {
-    max-width: 380px; margin: 10vh auto; background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 1.75rem; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    max-width: 380px; margin: 10vh auto; background: var(--surface); border: 1px solid var(--ink-200);
+    border-radius: var(--radius); padding: 1.75rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,.05);
   }
-  #login-screen h1 { font-size: 1.15rem; margin: 0 0 .3rem; }
+  #login-screen h1 { font-size: 1.1rem; margin: 0 0 .3rem; color: var(--ink-900); font-weight: 600; }
   .field { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .9rem; }
-  .field label { font-size: .78rem; color: var(--muted); font-weight: 600; }
+  .field label { font-size: .72rem; color: var(--ink-500); font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
   input, select {
-    padding: .55rem .7rem; border: 1px solid var(--border); border-radius: 7px;
+    padding: .5rem .75rem; border: 1px solid var(--ink-300); border-radius: 6px;
     background: var(--surface); color: var(--text); width: 100%;
   }
-  input:focus, select:focus { outline: 2px solid var(--accent-weak); border-color: var(--accent); }
+  input:focus, select:focus { outline: none; border-color: var(--ink-500); box-shadow: 0 0 0 1px var(--ink-500); }
 
   /* ---- App shell ---- */
   #app { display: none; height: 100vh; }
@@ -53,17 +59,18 @@
     width: var(--sidebar-w); flex: 0 0 var(--sidebar-w); background: var(--surface);
     border-right: 1px solid var(--border); display: flex; flex-direction: column;
   }
-  .sidebar .brand { padding: 1.1rem 1.1rem .9rem; font-weight: 700; font-size: 1rem; letter-spacing: -.01em; }
-  .sidebar .brand span { color: var(--accent); }
-  .nav { display: flex; flex-direction: column; gap: .15rem; padding: .4rem; flex: 1; }
+  .sidebar .brand { padding: 1rem 1rem .9rem; font-weight: 600; font-size: .92rem; color: var(--ink-900); }
+  .sidebar .brand span { color: var(--ink-500); font-weight: 400; }
+  .sidebar .brand .tag { font-size: .72rem; color: var(--muted); margin-top: .1rem; }
+  .nav { display: flex; flex-direction: column; gap: .1rem; padding: .5rem; flex: 1; }
   .nav button {
-    display: flex; align-items: center; gap: .6rem; text-align: left; background: transparent; border: none;
-    color: var(--muted); padding: .55rem .7rem; border-radius: 7px; font-weight: 500; cursor: pointer; font-size: .88rem;
+    display: flex; align-items: center; justify-content: space-between; text-align: left;
+    background: transparent; border: none; color: var(--ink-600); padding: .5rem .75rem;
+    border-radius: 6px; font-weight: 400; cursor: pointer; font-size: .85rem;
   }
-  .nav button:hover { background: var(--surface-2); color: var(--text); }
-  .nav button.active { background: var(--accent-weak); color: var(--accent); font-weight: 600; }
-  .nav .icon { width: 1.1em; text-align: center; opacity: .9; }
-  .sidebar .footer { padding: .8rem; border-top: 1px solid var(--border); }
+  .nav button:hover { background: var(--ink-50); color: var(--ink-900); }
+  .nav button.active { background: var(--ink-100); color: var(--ink-900); font-weight: 500; }
+  .sidebar .footer { padding: .6rem; border-top: 1px solid var(--border); }
 
   .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
   .topbar {
@@ -78,37 +85,43 @@
 
   /* ---- Cards / tables / buttons (kept close to before, restyled) ---- */
   .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 1.2rem; margin-bottom: 1.1rem; box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    background: var(--surface); border: 1px solid var(--ink-200); border-radius: var(--radius);
+    padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,.05);
   }
-  .card h3 { font-size: .92rem; margin: 0 0 .9rem; font-weight: 600; }
+  .card h3 { font-size: .9rem; margin: 0 0 .9rem; font-weight: 600; color: var(--ink-900); }
   .card .desc { color: var(--muted); font-size: .85rem; margin: -.3rem 0 .9rem; }
   table { width: 100%; border-collapse: collapse; font-size: .87rem; }
-  th, td { text-align: left; padding: .55rem .4rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
+  th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--ink-200); vertical-align: top; white-space: nowrap; }
+  th { color: var(--ink-500); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; }
   tr:last-child td { border-bottom: none; }
-  .pill { padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; display: inline-block; }
+  .pill { padding: .1rem .4rem; border-radius: 4px; font-size: .72rem; font-weight: 600; display: inline-block; }
   .pill.ok, .state.Delivered, .state.Sent, .state.Processed { background: var(--ok-weak); color: var(--ok); }
   .pill.warn, .state.Pending { background: var(--warn-weak); color: var(--warn); }
   .pill.err, .state.Failed { background: var(--err-weak); color: var(--err); }
-  .state { padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .state { padding: .1rem .4rem; border-radius: 4px; font-size: .72rem; font-weight: 600; }
   button {
-    padding: .5rem .9rem; border: none; border-radius: 7px; background: var(--accent); color: #fff;
-    cursor: pointer; font-weight: 600; font-size: .85rem;
+    display: inline-flex; align-items: center; gap: .35rem; border-radius: 6px; padding: .5rem .75rem;
+    border: none; cursor: pointer; font-weight: 500; font-size: .85rem; transition: background-color .12s;
+    background: var(--accent); color: #fff;
   }
-  button.secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+  button:hover { background: var(--accent-hover); }
+  button.secondary { background: var(--surface); color: var(--ink-800); border: 1px solid var(--ink-300); }
+  button.secondary:hover { background: var(--ink-100); }
   button.danger { background: var(--err); }
-  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.danger:hover { background: var(--err-hover); }
+  button:disabled { cursor: not-allowed; opacity: .5; }
   .row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: end; margin-bottom: .8rem; }
-  .row label { display: flex; flex-direction: column; gap: .25rem; font-size: .78rem; color: var(--muted); font-weight: 600; }
+  .row label { display: flex; flex-direction: column; gap: .3rem; font-size: .72rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: .03em; color: var(--ink-500); }
   .muted { color: var(--muted); font-size: .85rem; }
   .token-box {
-    background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: .8rem;
-    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .78rem; word-break: break-all; margin-top: .6rem;
+    background: var(--ink-50); border: 1px solid var(--ink-200); border-radius: 6px; padding: .8rem;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .78rem; word-break: break-all; margin-top: .6rem;
   }
   .err-msg { color: var(--err); font-size: .85rem; margin-top: .4rem; }
   .checks { display: flex; gap: .4rem; flex-wrap: wrap; }
-  .checks label { flex-direction: row; align-items: center; gap: .3rem; font-size: .78rem; font-weight: 500; }
+  .checks label { flex-direction: row; align-items: center; gap: .3rem; font-size: .78rem; font-weight: 400;
+    text-transform: none; color: var(--text); }
 </style>
 </head>
 <body>
@@ -126,13 +139,13 @@
 <div id="app">
   <div class="shell">
     <nav class="sidebar">
-      <div class="brand">SMS<span>Gateway</span></div>
+      <div class="brand">SMS Gateway<div class="tag">Admin console</div></div>
       <div class="nav">
-        <button data-view="subscription" class="active"><span class="icon">&#9679;</span> Subscription</button>
-        <button data-view="devices"><span class="icon">&#9632;</span> Devices</button>
-        <button data-view="messages"><span class="icon">&#9993;</span> Messages</button>
-        <button data-view="tokens"><span class="icon">&#9873;</span> API Tokens</button>
-        <button data-view="webhooks"><span class="icon">&#9889;</span> Webhooks</button>
+        <button data-view="subscription" class="active">Subscription</button>
+        <button data-view="devices">Devices</button>
+        <button data-view="messages">Messages</button>
+        <button data-view="tokens">API Tokens</button>
+        <button data-view="webhooks">Webhooks</button>
       </div>
       <div class="footer">
         <button class="secondary" id="logout-btn" style="width:100%">Log out</button>
